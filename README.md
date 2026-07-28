@@ -1,6 +1,8 @@
 # rNDC
 
-This package provides an R-based interface to *NatureDataCube*. The idea of the *NatureDataCube* is to offer an accessible way for researchers/ecologists to retrieve relevant data.
+This package provides an R-based interface to *NatureDataCube*.
+
+The idea of the *NatureDataCube* is to offer an accessible way for researchers/ecologists to retrieve relevant data.
 
 *NatureDataCube* is a platform based on [*AgroDataCube*](https://agrodatacube.wur.nl/), holding and providing access to data used in the context of project [LTER-LIFE](https://lter-life.nl/en).
 
