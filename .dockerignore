@@ -1,9 +1,0 @@
-.git
-.gitignore
-.env
-.Rproj.user
-.Rhistory
-.RData
-tests/
-README.md
-LICENSE

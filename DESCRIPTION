@@ -1,9 +1,9 @@
-Package: NatureDataCubeR
+Package: rNDC
 Type: Package
-Title: Programmatic and graphical interfaces to LTER-LIFE's NatureDataCube
+Title: R functions to interfaces with LTER-LIFE's NatureDataCube
 Version: 0.3
 Date: 2026-06-12
 Author: Bruno Marcos, Daan Lichtenberg, Minke Mulder
 Maintainer: Bruno Marcos <brunoasmarcos@gmail.com>, Daan Lichtenberg <D.Lichtenberg@nioo.knaw.nl>
-Description: A set of functions, wrappers, and a Shiny app GUI to facilitate finding and getting data from LTER-LIFE's NatureDataCube.
+Description: A set of functions and wrappers to facilitate finding and getting data from LTER-LIFE's NatureDataCube.
 License: Apache Version 2.0
