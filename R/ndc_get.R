@@ -16,9 +16,11 @@
 
 library(rstac)
 library(httr)
+library(tibble)
+library(sf)
 
-ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL, limit = 100,
-                    token = Sys.getenv("NDC_TOKEN"), mode = "items", crs = 4326,
+ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL,
+                    limit = 100, token = Sys.getenv("NDC_TOKEN"), mode = "items",
                     output_dir = tempdir(), overwrite = TRUE, progress = FALSE) {
   
   headers <- add_headers("Authorization" = paste0("Bearer ", token))
@@ -40,9 +42,9 @@ ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL, l
   } else if (mode == "tibble") {
     items_as_tibble(items)
   } else if (mode == "sf") {
-    items_as_sf(items, crs = crs)
+    items_as_sf(items)
   } else if (mode == "sfc") {
-    items_as_sfc(items, crs = crs)
+    items_as_sfc(items)
   } else if (mode == "download") {
     assets_download(items, asset_names = asset_names,
                     output_dir = output_dir, overwrite = overwrite)
