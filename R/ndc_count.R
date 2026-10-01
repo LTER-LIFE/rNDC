@@ -2,9 +2,6 @@
 #'
 #' Obtain a number of items available in NatureDataCube datasets (optionally constrained by query parameters).
 #'
-#' @import rstac
-#' @import httr
-#' @import sf
 #' @param s doc_item. Search object resulting from `ndc_search` or a standard STAC query.
 #' @param collection character. Collection ID.
 #' @param roi character, numeric or sf. Region of interest. Can be either: (i) a character value for one of the projects from the Data Registry, (ii) a numeric vector with coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.
@@ -13,11 +10,6 @@
 #' @param token character. API token.
 #' @returns integer. Number of STAC Items matched by the search query.
 #' @export
-
-# Packages
-library(rstac)
-library(httr)
-library(sf)
 
 # Return the number of STAC Items in a STAC Collection
 ndc_count <- function(s = NULL, collection = NULL, roi = NULL, trange = NULL,

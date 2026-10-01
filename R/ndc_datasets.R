@@ -2,9 +2,6 @@
 #'
 #' List all datasets (optionally constrained by query parameters) in NatureDataCube.
 #'
-#' @import rstac
-#' @import httr
-#' @import sf
 #' @param roi character, numeric or sf. Region of interest. Can be either: (i) a character value for one of the projects from the Data Registry, (ii) a numeric vector with coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.
 #' @param trange character. Temporal range.
 #' @param token character. API token.
@@ -12,10 +9,6 @@
 #' @param matched boolean. If `TRUE`, return matched number of STAC Items for each STAC Collection.
 #' @returns character or data frame. List of STAC Collections and (optionally) the total and/or matched STAC Items count.
 #' @export
-
-library(rstac)
-library(httr)
-library(sf)
 
 ndc_datasets <- function(roi = NULL, trange = NULL,
                          token = Sys.getenv("NDC_TOKEN"),

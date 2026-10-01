@@ -1,0 +1,18 @@
+schema_version: "1.0.0"
+project:
+  name: "rNDC"
+  content_type: "software"
+ai_usage:
+  used: true
+  summary: "Used to for code improvement and completion."
+  level: "moderate"
+  tools:
+    - name: "Windsurf"
+      type: "assistant"
+      contribution: "Code completion within Positron IDE."
+    - name: "Claude Code Sonnet 5.5"
+      type: "assistant"
+      contribution: "Improve and optimize code."
+declaration:
+  date: "2026-10-01"
+  declared_by: "Bruno Marcos"

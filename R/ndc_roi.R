@@ -2,12 +2,9 @@
 #'
 #' Import and transform spatial region of interest.
 #'
-#' @import sf
-#' @param roi character, numeric or sf. Region of interest. Can be either: (i) a character value for one of the projects from the Data Registry, (ii) a numeric vector with coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.
-#' @returns A request response list.
+#' @param roi character, numeric or sf. Region of interest. Can be either: (i) a character pointing to a path of a file containing a custom geometry, (ii) a numeric vector with four coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.
+#' @returns An sfc object in EPSG:4326 (or `NULL` if `roi` is `NULL`). If the RoI has no CRS, EPSG:4326 is assumed.
 #' @export
-
-library(sf)
 
 ndc_roi <- function(roi = NULL) {
 
@@ -17,7 +14,12 @@ ndc_roi <- function(roi = NULL) {
     
     # Check object type
     if (inherits(roi, "numeric")) {
-      r <- st_bbox(roi)
+      if (length(roi) == 4) {
+        r <- st_as_sfc(st_bbox(c(xmin = roi[[1]], ymin = roi[[2]], xmax = roi[[3]], ymax = roi[[4]]),
+                               crs = st_crs(4326)))
+      } else {
+        stop("Invalid bounding box coordinates.", call. = FALSE)
+      }
     } else if (inherits(roi, "character")) {
       if (file.exists(roi)) {
         r <- st_read(roi, quiet = TRUE)
@@ -29,12 +31,21 @@ ndc_roi <- function(roi = NULL) {
     }
   
     # Extract geometry
-    if (inherits(r, c("sf", "sfc", "sfg"))) {
+    if (inherits(r, c("sf", "sfc"))) {
       r <- st_geometry(r)
+    } else if (inherits(r, "sfg")) {
+      r <- st_sfc(r)
+    } else if (!inherits(r, "bbox")) {
+      stop("RoI must be a bounding box, a file path, or an sf/sfc/sfg object.", call. = FALSE)
+    }
+    if (inherits(r, "bbox")) {
+      r <- st_as_sfc(r)
     }
 
-    # Reprojection (if needed)
-    if (st_crs(r) != st_crs(4326)) {
+    # Reprojection (assume EPSG:4326 if no CRS is set)
+    if (is.na(st_crs(r))) {
+      st_crs(r) <- 4326
+    } else if (st_crs(r) != st_crs(4326)) {
       r <- st_transform(r, 4326)
     }
   }

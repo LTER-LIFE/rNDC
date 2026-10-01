@@ -2,7 +2,6 @@
 #'
 #' Wrapper to get data from _AgroDataCube_ through their REST API.
 #'
-#' @import httr
 #' @param url character. Request URL.
 #' @param option character. Determines the type of request.
 #' @param params vector or list. List of named parameters.
@@ -13,8 +12,6 @@
 #' @param overwrite boolean. If `TRUE`, overwrite file.
 #' @returns A request response list.
 #' @export
-
-library(httr)
 
 adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE,
                     token = Sys.getenv("ADC_TOKEN"), out_path = tempfile(), overwrite = TRUE) {

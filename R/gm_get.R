@@ -2,7 +2,6 @@
 #'
 #' Wrapper to get data from the _GroenMonitor_ WCS server.
 #'
-#' @import httr
 #' @param url character. Request URL.
 #' @param option character. Determines the type of request.
 #' @param params vector or list. List of named parameters.
@@ -10,8 +9,6 @@
 #' @param overwrite boolean. If `TRUE`, overwrite file.
 #' @returns A request response list.
 #' @export
-
-library(httr)
 
 gm_get <- function(url, option = "NDVI", params, out_path = tempfile(), overwrite = TRUE) {
 

@@ -11,26 +11,9 @@ stac_make_headers <- function(token) {
   if (!nzchar(token)) {
     stop("Nature Data Cube token is missing. Set the token explicitly before retrieval.", call. = FALSE)
   }
-  httr::add_headers(
-    "Authorization" = paste0("Bearer ", token),
-    "token" = token,
-    "Accept" = "application/json"
-  )
+  httr::add_headers("Authorization" = paste0("Bearer ", token),
+                    "token" = token, "Accept" = "application/json")
 }
-
-stac_normalize_aoi <- function(aoi) {
-  if (inherits(aoi, "sf")) {
-    aoi <- sf::st_geometry(aoi)
-  }
-  if (!inherits(aoi, c("sfc", "sfg"))) {
-    stop("AOI must be an sf or sfc object.", call. = FALSE)
-  }
-  if (is.na(sf::st_crs(aoi))) {
-    sf::st_crs(aoi) <- 4326
-  }
-  sf::st_transform(aoi, 4326)
-}
-# TODO: check if this function can be merged with `ndc_roi`
 
 stac_keywords_to_vec <- function(x) {
   if (is.null(x)) return(character(0))
@@ -70,7 +53,7 @@ stac_feature_meta <- function(feat, asset_name = "wcs") {
 }
 
 stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name = "wcs", limit = 100) {
-  aoi_4326 <- stac_normalize_aoi(aoi)
+  aoi_4326 <- ndc_roi(aoi)
   headers <- stac_make_headers(token)
 
   items <- rstac::stac(endpoint) |>
@@ -91,7 +74,7 @@ stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name =
 }
 
 stac_bbox_in_crs <- function(aoi, target_crs = 32631L) {
-  aoi_4326 <- stac_normalize_aoi(aoi)
+  aoi_4326 <- ndc_roi(aoi)
   aoi_sf <- sf::st_as_sf(aoi_4326)
   aoi_proj <- sf::st_transform(aoi_sf, target_crs)
   sf::st_bbox(aoi_proj)
@@ -181,7 +164,7 @@ stac_download_one <- function(href, outfile, headers, overwrite = TRUE, retries 
 stac_clip_raster_to_aoi <- function(r, aoi) {
   if (is.null(r)) return(NULL)
 
-  aoi_vect <- terra::vect(stac_normalize_aoi(aoi))
+  aoi_vect <- terra::vect(ndc_roi(aoi))
   r_crs <- terra::crs(r)
   if (is.na(r_crs) || !nzchar(r_crs)) {
     stop("Downloaded raster has no CRS, so it cannot be clipped safely.", call. = FALSE)

@@ -1,7 +1,5 @@
 # Nitrogen / Nature Data Cube retrieval helpers
 # --------------------------------------------
-# Depends on packages already loaded in app.R:
-# rstac, httr, sf, terra, dplyr, purrr, tibble, jsonlite
 
 nitrogen_endpoint <- "https://ndc-test.containers.wur.nl/api/"
 nitrogen_collection <- "ndc-geoserver-rasters"
@@ -12,20 +10,6 @@ nitrogen_layer_choices <- c("ntot", "nox", "nh3")
 
 nitrogen_default_year <- "2024"
 nitrogen_default_layers <- nitrogen_layer_choices
-
-#' Available Nitrogen layer names
-#'
-#' Accessor for the nitrogen layer choices, exported so calling code (e.g. the
-#' Shiny app) can reach this config value without relying on unexported objects.
-#' @return Character vector of nitrogen layer names.
-#' @export
-ndc_nitrogen_layers <- function() nitrogen_layer_choices
-
-#' Available Nitrogen year choices
-#'
-#' @return Character vector of selectable years for the Nitrogen dataset.
-#' @export
-ndc_nitrogen_years <- function() nitrogen_year_choices
 
 nitrogen_clean_layer_name <- function(x) {
   x <- as.character(x)
@@ -39,29 +23,6 @@ nitrogen_normalize_year <- function(x) {
   ifelse(nzchar(x), x, NA_character_)
 }
 
-#' Build the Nitrogen dataset control UI (year + layer pickers)
-#'
-#' @return A Shiny tagList of input controls for the Nitrogen dataset.
-#' @export
-nitrogen_controls_ui <- function() {
-  shiny::tagList(
-    shiny::tags$div(
-      class = "dataset-controls",
-      shiny::selectInput(
-        "nitrogen_year",
-        "Select year:",
-        choices = nitrogen_year_choices,
-        selected = nitrogen_default_year,
-        multiple = FALSE
-      ),
-      shiny::tags$div(
-        style = "margin-top: 6px; color: #5a6472;",
-        "Retrieval will return all nitrogen rasters: ntot, nox, and nh3."
-      )
-    )
-  )
-}
-
 nitrogen_controls_are_valid <- function(year, layers) {
   year_ok <- !is.null(year) && !is.na(year) && nzchar(as.character(year))
   layers_ok <- !is.null(layers) && length(layers) > 0 && any(nzchar(as.character(layers)))
@@ -72,26 +33,10 @@ nitrogen_make_headers <- function(token) {
   token <- as.character(token)
   token <- trimws(token)
   if (!nzchar(token)) {
-    stop("Nature Data Cube token is missing. Set NDC_NATURE_TOKEN (or pass token explicitly).", call. = FALSE)
+    stop("Nature Data Cube token is missing. Set NDC_TOKEN (or pass token explicitly).", call. = FALSE)
   }
-  httr::add_headers(
-    "Authorization" = paste0("Bearer ", token),
-    "token" = token,
-    "Accept" = "application/json"
-  )
-}
-
-nitrogen_normalize_aoi <- function(aoi) {
-  if (inherits(aoi, "sf")) {
-    aoi <- sf::st_geometry(aoi)
-  }
-  if (!inherits(aoi, c("sfc", "sfg"))) {
-    stop("AOI must be an sf or sfc object.", call. = FALSE)
-  }
-  if (is.na(sf::st_crs(aoi))) {
-    sf::st_crs(aoi) <- 4326
-  }
-  sf::st_transform(aoi, 4326)
+  httr::add_headers("Authorization" = paste0("Bearer ", token),
+                    "token" = token, "Accept" = "application/json")
 }
 
 nitrogen_collect_metadata <- function(aoi, token, endpoint = nitrogen_endpoint,
@@ -99,7 +44,7 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = nitrogen_endpoint,
                                       layers = nitrogen_layer_choices,
                                       year = NULL,
                                       limit = 100) {
-  aoi_4326 <- nitrogen_normalize_aoi(aoi)
+  aoi_4326 <- ndc_roi(aoi)
   headers <- nitrogen_make_headers(token)
 
   items <- rstac::stac(endpoint) |>
@@ -179,7 +124,7 @@ nitrogen_download_one <- function(href, outfile, headers, overwrite = TRUE) {
 nitrogen_clip_raster_to_aoi <- function(r, aoi) {
   if (is.null(r)) return(NULL)
 
-  aoi_vect <- terra::vect(nitrogen_normalize_aoi(aoi))
+  aoi_vect <- terra::vect(ndc_roi(aoi))
   r_crs <- terra::crs(r)
   if (is.na(r_crs) || !nzchar(r_crs)) {
     stop("Downloaded raster has no CRS, so it cannot be clipped safely.", call. = FALSE)
@@ -197,7 +142,7 @@ nitrogen_clip_raster_to_aoi <- function(r, aoi) {
 #' @param year Year to retrieve (e.g. "2024", "2025", "2040").
 #' @param layers Character vector of layer names. Defaults to all available
 #'   nitrogen layers (\code{nitrogen_layer_choices}).
-#' @param token API token (defaults to the NDC_NATURE_TOKEN env var).
+#' @param token API token (defaults to the NDC_TOKEN env var).
 #' @param endpoint,collection STAC endpoint and collection.
 #' @param out_dir Output directory for downloaded rasters.
 #' @param overwrite Overwrite existing files.
@@ -205,7 +150,7 @@ nitrogen_clip_raster_to_aoi <- function(r, aoi) {
 #' @param file_prefix Optional file prefix.
 #' @return A list with the raster stack and metadata, or NULL.
 #' @export
-get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, token = Sys.getenv("NDC_NATURE_TOKEN"),
+get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, token = Sys.getenv("NDC_TOKEN"),
                                 endpoint = nitrogen_endpoint,
                                 collection = nitrogen_collection,
                                 out_dir = tempdir(),
@@ -267,7 +212,7 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
   )
 }
 
-get_nitrogen_stats <- function(aoi, year, layers, token = Sys.getenv("NDC_NATURE_TOKEN"),
+get_nitrogen_stats <- function(aoi, year, layers, token = Sys.getenv("NDC_TOKEN"),
                                endpoint = nitrogen_endpoint,
                                collection = nitrogen_collection,
                                out_dir = tempdir(),

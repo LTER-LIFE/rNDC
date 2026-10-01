@@ -10,20 +10,6 @@ landuse_year_choices <- c(2024L)
 landuse_subset_crs <- 32631L
 landuse_min_file_size <- 100000L
 
-#' Default Land Use year
-#'
-#' Accessor for the default Land Use year, exported so calling code (e.g. the
-#' Shiny app) can reach this config value without relying on unexported objects.
-#' @return Integer default year for the Land Use dataset.
-#' @export
-ndc_landuse_default_year <- function() landuse_default_year
-
-#' Available Land Use year choices
-#'
-#' @return Integer vector of selectable years for the Land Use dataset.
-#' @export
-ndc_landuse_years <- function() landuse_year_choices
-
 landuse_normalize_year <- function(year) {
   if (is.null(year) || length(year) == 0) return(NA_integer_)
   year <- suppressWarnings(as.integer(as.character(year)[1]))

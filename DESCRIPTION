@@ -1,9 +1,21 @@
 Package: rNDC
-Type: Package
 Title: R functions to interfaces with LTER-LIFE's NatureDataCube
-Version: 0.3
-Date: 2026-07-28
-Author: Bruno Marcos, Daan Lichtenberg, Minke Mulder
-Maintainer: Bruno Marcos <brunoasmarcos@gmail.com>, Daan Lichtenberg <D.Lichtenberg@nioo.knaw.nl>
+Version: 0.4
+Date: 2026-10-01
+Authors@R: c(
+  person(given = "Bruno",
+         family = "Marcos",
+         email = "brunoasmarcos@gmail.com",
+         role = c("aut", "cre")),
+  person(given = "Daan",
+         family = "Lichtenberg",
+         email = "D.Lichtenberg@nioo.knaw.nl",
+         role = "aut"),
+  person(given = "Minke",
+         family = "Mulder",
+         role = "aut"))
+Encoding: UTF-8
+Depends: R (>= 4.1)
 Description: A set of functions and wrappers to facilitate finding and getting data from LTER-LIFE's NatureDataCube.
-License: Apache Version 2.0
+License: Apache License (>= 2)
+Imports: terra, sf, rstac, httr, dplyr, purrr, tibble, jsonlite, lubridate, geojsonsf
