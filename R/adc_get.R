@@ -10,7 +10,7 @@
 #' @param download boolean. If `TRUE`, download file.
 #' @param out_path character. Output path.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
-#' @returns A request response list.
+#' @returns The parsed content of the response (a list for JSON responses). An error is raised if the request fails.
 #' @export
 
 adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE,
@@ -22,6 +22,8 @@ adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE
     base_url <- "https://agrodatacube.wur.nl/api/v2/rest/"
   } else if (server_code %in% c("test", "adct", "agrodatacube-test", "agro data cube test")) {
     base_url <- "https://agrodatacube-test.containers.wur.nl/api/v2/rest/"
+  } else {
+    stop("Unknown `server`: use \"adc\" or \"test\".", call. = FALSE)
   }
 
   # Compose request URL
@@ -37,10 +39,14 @@ adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE
 
   # Submit request
   if (download) {
-      response <- content(VERB("GET", url = request_url, add_headers(request_headers),
-                               write_disk(out_path, overwrite = overwrite)))
+    response <- VERB("GET", url = request_url, add_headers(request_headers),
+                     write_disk(out_path, overwrite = overwrite))
   } else {
-      response <- content(VERB("GET", url = request_url, add_headers(request_headers)))
+    response <- VERB("GET", url = request_url, add_headers(request_headers))
   }
-  return(response)
+  if (httr::http_error(response)) {
+    if (download) on.exit(unlink(out_path), add = TRUE)  # remove the saved error body
+    stop_for_http_error(response, "AgroDataCube")
+  }
+  return(content(response))
 }

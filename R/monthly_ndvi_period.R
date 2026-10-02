@@ -1,3 +1,13 @@
+#' Monthly average NDVI over a period
+#'
+#' Compute the monthly average NDVI (see [download_avg_ndvi_month()]) for every
+#' month between two months, and stack the results on a common grid.
+#'
+#' @param poly sf. Area of interest (its bounding box is requested).
+#' @param start_year,start_month,end_year,end_month integer. First and last month (both included).
+#' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
+#' @returns A `SpatRaster` with one layer per month with data (named `ndvi_mean_YYYYMM`), or `NULL` if no data is available.
+#' @export
 download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end_month, epsg = 32631) {
 
   start_date <- as.Date(sprintf("%04d-%02d-01", start_year, start_month))

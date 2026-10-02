@@ -1,0 +1,8 @@
+^CLAUDE\.md$
+^aidecl\.yaml$
+^tests/.*\.ipynb$
+^\.idea$
+^\.Rproj\.user$
+^.*\.Rproj$
+^LICENSE$
+^tools$

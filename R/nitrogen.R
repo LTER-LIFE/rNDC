@@ -1,15 +1,11 @@
 # Nitrogen / Nature Data Cube retrieval helpers
 # --------------------------------------------
 
-nitrogen_endpoint <- "https://ndc-test.containers.wur.nl/api/"
-nitrogen_collection <- "ndc-geoserver-rasters"
 nitrogen_asset_name <- "wcs"
+nitrogen_subset_crs <- 32631L
 
-nitrogen_year_choices <- c("2024", "2025", "2040")
 nitrogen_layer_choices <- c("ntot", "nox", "nh3")
 
-nitrogen_default_year <- "2024"
-nitrogen_default_layers <- nitrogen_layer_choices
 
 nitrogen_clean_layer_name <- function(x) {
   x <- as.character(x)
@@ -29,59 +25,35 @@ nitrogen_controls_are_valid <- function(year, layers) {
   year_ok && layers_ok
 }
 
-nitrogen_make_headers <- function(token) {
-  token <- as.character(token)
-  token <- trimws(token)
-  if (!nzchar(token)) {
-    stop("Nature Data Cube token is missing. Set NDC_TOKEN (or pass token explicitly).", call. = FALSE)
-  }
-  httr::add_headers("Authorization" = paste0("Bearer ", token),
-                    "token" = token, "Accept" = "application/json")
-}
-
-nitrogen_collect_metadata <- function(aoi, token, endpoint = nitrogen_endpoint,
-                                      collection = nitrogen_collection,
+nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
+                                      collection = NULL,
                                       layers = nitrogen_layer_choices,
                                       year = NULL,
                                       limit = 100) {
-  aoi_4326 <- ndc_roi(aoi)
-  headers <- nitrogen_make_headers(token)
-
-  items <- rstac::stac(endpoint) |>
-    rstac::stac_search(
-      collections = collection,
-      intersects = aoi_4326,
+  # Each nitrogen layer lives in its own collection (named after the layer)
+  collections <- if (is.null(collection)) layers else collection
+  meta <- dplyr::bind_rows(lapply(collections, function(col) {
+    stac_collect_metadata(
+      aoi = aoi,
+      token = token,
+      endpoint = endpoint,
+      collection = col,
+      asset_name = nitrogen_asset_name,
       limit = limit
-    ) |>
-    rstac::post_request(headers) |>
-    rstac::items_fetch(progress = FALSE)
+    )
+  }))
 
-  feats <- items$features
-  if (is.null(feats) || length(feats) == 0) {
+  if (nrow(meta) == 0) {
     stop("No Nature Data Cube raster items were found for the selected AOI.", call. = FALSE)
   }
 
-  meta <- purrr::map_dfr(feats, function(feat) {
-    lyr <- feat$properties$`ndc:layer_type`
-    obs <- feat$properties$`ndc:observation_date`
-    href <- feat$assets[[nitrogen_asset_name]]$href
-
-    tibble::tibble(
-      layer = as.character(lyr),
-      observation_date = as.character(obs),
-      year = substr(as.character(obs), 1, 4),
-      href = as.character(href)
-    )
-  })
-
-  meta <- dplyr::filter(meta, !is.na(layer), !is.na(year), layer %in% layers)
-
+  keep <- !is.na(meta$layer) & !is.na(meta$year) & !is.na(meta$href) & meta$layer %in% layers
   if (!is.null(year)) {
-    year_chr <- as.character(year)
-    meta <- dplyr::filter(meta, year %in% year_chr)
+    keep <- keep & meta$year %in% as.character(year)
   }
+  meta <- meta[keep, , drop = FALSE]
+  meta <- meta[!duplicated(meta[c("layer", "year")]), , drop = FALSE]
 
-  meta <- dplyr::distinct(meta, layer, year, .keep_all = TRUE)
   if (nrow(meta) == 0) {
     stop(
       paste0(
@@ -98,44 +70,6 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = nitrogen_endpoint,
   meta
 }
 
-nitrogen_download_one <- function(href, outfile, headers, overwrite = TRUE) {
-  if (file.exists(outfile) && !overwrite) return(outfile)
-
-  res <- httr::GET(
-    href,
-    headers,
-    httr::write_disk(outfile, overwrite = overwrite)
-  )
-
-  if (httr::http_error(res)) {
-    stop(
-      paste0(
-        "Failed to download Nature Data Cube raster: HTTP ",
-        httr::status_code(res),
-        " for ", href
-      ),
-      call. = FALSE
-    )
-  }
-
-  outfile
-}
-
-nitrogen_clip_raster_to_aoi <- function(r, aoi) {
-  if (is.null(r)) return(NULL)
-
-  aoi_vect <- terra::vect(ndc_roi(aoi))
-  r_crs <- terra::crs(r)
-  if (is.na(r_crs) || !nzchar(r_crs)) {
-    stop("Downloaded raster has no CRS, so it cannot be clipped safely.", call. = FALSE)
-  }
-
-  aoi_proj <- terra::project(aoi_vect, r_crs)
-  r_clip <- terra::crop(r, aoi_proj)
-  r_clip <- terra::mask(r_clip, aoi_proj)
-  r_clip
-}
-
 #' Download Nitrogen raster layers for an area of interest
 #'
 #' @param aoi An sf object (area of interest).
@@ -143,16 +77,17 @@ nitrogen_clip_raster_to_aoi <- function(r, aoi) {
 #' @param layers Character vector of layer names. Defaults to all available
 #'   nitrogen layers (\code{nitrogen_layer_choices}).
 #' @param token API token (defaults to the NDC_TOKEN env var).
-#' @param endpoint,collection STAC endpoint and collection.
+#' @param endpoint STAC endpoint.
+#' @param collection STAC collection(s). By default, one collection per layer (`ntot`, `nox`, `nh3`).
 #' @param out_dir Output directory for downloaded rasters.
 #' @param overwrite Overwrite existing files.
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
-#' @return A list with the raster stack and metadata, or NULL.
+#' @return A list with the rasters, the raster stack, the file paths and the metadata.
 #' @export
 get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, token = Sys.getenv("NDC_TOKEN"),
-                                endpoint = nitrogen_endpoint,
-                                collection = nitrogen_collection,
+                                endpoint = ndc_endpoint(),
+                                collection = NULL,
                                 out_dir = tempdir(),
                                 overwrite = TRUE,
                                 limit = 100,
@@ -174,47 +109,46 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
     limit = limit
   )
 
-  headers <- nitrogen_make_headers(token)
+  headers <- stac_make_headers(token)
+  prefix <- stac_make_file_prefix(file_prefix)
+
+  download_dir <- if (is.null(out_dir) || !nzchar(as.character(out_dir))) tempdir() else out_dir
+  dir.create(download_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # Only request the area of interest from the WCS server (not the full raster)
+  subset_suffix <- stac_wcs_subset_suffix(aoi, target_crs = nitrogen_subset_crs)
+
   downloaded <- list()
   clipped <- list()
-
-  prefix <- if (is.null(file_prefix) || !nzchar(as.character(file_prefix))) "" else paste0(gsub("[^A-Za-z0-9_\\-]+", "_", as.character(file_prefix)), "_")
 
   for (i in seq_len(nrow(meta))) {
     lyr <- meta$layer[i]
     yr <- meta$year[i]
-    href <- meta$href[i]
-
-    fname <- paste0(prefix, lyr, "_", yr, ".tif")
-    fpath <- file.path(out_dir, fname)
-
-    nitrogen_download_one(href, fpath, headers, overwrite = overwrite)
-    r <- terra::rast(fpath)
-    r <- nitrogen_clip_raster_to_aoi(r, aoi)
-
     nm <- paste0(lyr, "_", yr)
+    fpath <- file.path(download_dir, paste0(prefix, nm, ".tif"))
+
+    stac_download_one(paste0(meta$href[i], subset_suffix), fpath, headers,
+                      overwrite = overwrite)
+
+    r <- terra::rast(fpath)
+    r <- stac_clip_raster_to_aoi(r, aoi)
     names(r) <- nm
+
     downloaded[[nm]] <- fpath
     clipped[[nm]] <- r
   }
 
-  stack <- if (length(clipped) == 1) {
-    clipped[[1]]
-  } else {
-    terra::rast(clipped)
-  }
-
   list(
     rasters = clipped,
-    stack = stack,
+    stack = stac_build_stack(clipped),
     files = downloaded,
     metadata = meta
   )
 }
 
 get_nitrogen_stats <- function(aoi, year, layers, token = Sys.getenv("NDC_TOKEN"),
-                               endpoint = nitrogen_endpoint,
-                               collection = nitrogen_collection,
+                               endpoint = ndc_endpoint(),
+                               collection = NULL,
                                out_dir = tempdir(),
                                overwrite = TRUE,
                                limit = 100,

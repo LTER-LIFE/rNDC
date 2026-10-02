@@ -10,10 +10,10 @@ The idea of the *NatureDataCube* is to offer an accessible way for researchers/e
 
 ```r
 # install.packages("remotes")
-remotes::install_github("<owner>/rNDC")
+remotes::install_github("LTER-LIFE/rNDC")
 ```
 
-Replace `<owner>/rNDC` with the location of this repository. The package needs R >= 4.1 and the packages listed in `Imports` in [DESCRIPTION](DESCRIPTION).
+The package needs R >= 4.1 and the packages listed in `Imports` in [DESCRIPTION](DESCRIPTION).
 
 ## Authentication
 
@@ -25,6 +25,8 @@ API tokens are read from environment variables (or can be passed through the `to
 | `ADC_TOKEN` | `adc_get` (and the meteo functions built on it, which take `token` explicitly) |
 
 For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`.
+
+The STAC endpoint defaults to the NatureDataCube test server. To use another one, set `options(rNDC.endpoint = "https://.../api/")` (see [`ndc_endpoint`](R/ndc_endpoint.R)).
 
 ## Main R functions
 
@@ -56,6 +58,10 @@ For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renvi
 - [`gm_url`](R/gm_url.R): Compose URL text string for submitting data requests through the *GroenMonitor* WCS GeoServer.
 - [`gm_get`](R/gm_get.R): Submit requests to the *GroenMonitor* WCS GeoServer.
 - [`download_avg_ndvi_month`](R/monthly_ndvi.R), [`download_avg_ndvi_stack`](R/monthly_ndvi_period.R): Compute the average NDVI raster for a month, or a stack of monthly averages over a period.
+
+### Examples
+
+The notebooks in [`tests/`](tests) show each interface in use. [`examples_helpers.ipynb`](tests/examples_helpers.ipynb) covers the high-level functions above (study sites, land use, nitrogen, weather and monthly NDVI). They need network access and the `NDC_TOKEN` and `ADC_TOKEN` environment variables; `Rscript tools/run_notebooks.R` runs all of them as a check.
 
 ### To be implemented
 

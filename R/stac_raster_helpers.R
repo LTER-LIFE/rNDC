@@ -1,10 +1,41 @@
 # Shared helpers for STAC-based raster retrieval
 # ---------------------------------------------
 
+#' @noRd
 `%||%` <- function(x, y) {
   if (is.null(x) || length(x) == 0 || (length(x) == 1 && is.na(x))) y else x
 }
 
+#' STAC raster helpers
+#'
+#' Building blocks shared by the thematic raster functions ([get_landuse_raster()],
+#' [get_nitrogen_raster()]): querying STAC items, downloading WCS subsets and
+#' clipping rasters to an area of interest.
+#'
+#' @param token character. API token.
+#' @param aoi sf, sfc or numeric. Area of interest, normalised with [ndc_roi()].
+#' @param endpoint,collection character. STAC endpoint and collection ID.
+#' @param asset_name character. Name of the STAC asset holding the raster URL.
+#' @param limit integer. Maximum number of STAC items per page.
+#' @param feat list. A STAC feature (item).
+#' @param x character. Keywords, or a text to build a file prefix from.
+#' @param target_crs integer. EPSG code of the CRS used for WCS subsets.
+#' @param x_name,y_name character. Axis labels used in the WCS `subset` parameters.
+#' @param href character. URL to download.
+#' @param outfile character. Path of the downloaded file.
+#' @param headers Request headers, as returned by `stac_make_headers()`.
+#' @param overwrite logical. If `TRUE`, overwrite an existing file.
+#' @param retries integer. Number of download attempts.
+#' @param min_file_size numeric. Minimum acceptable file size in bytes (`NULL` to skip the check).
+#' @param r SpatRaster. Raster to clip.
+#' @param clipped list of SpatRaster. Rasters to combine.
+#' @returns Depends on the function: `stac_make_headers()` returns request headers;
+#'   `stac_collect_metadata()` a tibble with one row per STAC item;
+#'   `stac_download_one()` the path of the downloaded file;
+#'   `stac_clip_raster_to_aoi()` a clipped `SpatRaster`;
+#'   `stac_build_stack()` a `SpatRaster` (or `NULL`).
+#' @name stac_helpers
+#' @export
 stac_make_headers <- function(token) {
   token <- as.character(token)
   token <- trimws(token)
@@ -15,6 +46,8 @@ stac_make_headers <- function(token) {
                     "token" = token, "Accept" = "application/json")
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_keywords_to_vec <- function(x) {
   if (is.null(x)) return(character(0))
   x <- unlist(x, use.names = FALSE)
@@ -28,6 +61,8 @@ stac_keywords_to_vec <- function(x) {
   unique(tolower(x))
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_feature_meta <- function(feat, asset_name = "wcs") {
   props <- feat$properties %||% list()
   assets <- feat$assets %||% list()
@@ -52,6 +87,8 @@ stac_feature_meta <- function(feat, asset_name = "wcs") {
   )
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name = "wcs", limit = 100) {
   aoi_4326 <- ndc_roi(aoi)
   headers <- stac_make_headers(token)
@@ -70,9 +107,11 @@ stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name =
     return(tibble::tibble())
   }
 
-  purrr::map_dfr(feats, stac_feature_meta, asset_name = asset_name)
+  dplyr::bind_rows(lapply(feats, stac_feature_meta, asset_name = asset_name))
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_bbox_in_crs <- function(aoi, target_crs = 32631L) {
   aoi_4326 <- ndc_roi(aoi)
   aoi_sf <- sf::st_as_sf(aoi_4326)
@@ -80,6 +119,8 @@ stac_bbox_in_crs <- function(aoi, target_crs = 32631L) {
   sf::st_bbox(aoi_proj)
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_wcs_subset_suffix <- function(aoi, target_crs = 32631L, x_name = "E", y_name = "N") {
   bbox <- stac_bbox_in_crs(aoi, target_crs = target_crs)
   fmt <- function(x) format(as.numeric(x), scientific = FALSE, trim = TRUE, digits = 12)
@@ -90,6 +131,8 @@ stac_wcs_subset_suffix <- function(aoi, target_crs = 32631L, x_name = "E", y_nam
   )
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_download_one <- function(href, outfile, headers, overwrite = TRUE, retries = 3L, min_file_size = NULL) {
   if (file.exists(outfile) && !overwrite) return(outfile)
 
@@ -161,6 +204,8 @@ stac_download_one <- function(href, outfile, headers, overwrite = TRUE, retries 
   )
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_clip_raster_to_aoi <- function(r, aoi) {
   if (is.null(r)) return(NULL)
 
@@ -176,11 +221,15 @@ stac_clip_raster_to_aoi <- function(r, aoi) {
   r_clip
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_make_file_prefix <- function(x) {
   if (is.null(x) || !nzchar(as.character(x))) return("")
   paste0(gsub("[^A-Za-z0-9_\\-]+", "_", as.character(x)), "_")
 }
 
+#' @rdname stac_helpers
+#' @export
 stac_build_stack <- function(clipped) {
   if (length(clipped) == 0) return(NULL)
   if (length(clipped) == 1) clipped[[1]] else terra::rast(clipped)

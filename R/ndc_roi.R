@@ -13,7 +13,7 @@ ndc_roi <- function(roi = NULL) {
   } else {
     
     # Check object type
-    if (inherits(roi, "numeric")) {
+    if (is.numeric(roi)) {
       if (length(roi) == 4) {
         r <- st_as_sfc(st_bbox(c(xmin = roi[[1]], ymin = roi[[2]], xmax = roi[[3]], ymax = roi[[4]]),
                                crs = st_crs(4326)))
@@ -40,6 +40,11 @@ ndc_roi <- function(roi = NULL) {
     }
     if (inherits(r, "bbox")) {
       r <- st_as_sfc(r)
+    }
+
+    # Combine multiple geometries into one (the STAC `intersects` filter takes a single geometry)
+    if (length(r) > 1) {
+      r <- st_union(r)
     }
 
     # Reprojection (assume EPSG:4326 if no CRS is set)

@@ -5,6 +5,7 @@
 #' @param option character. Determines the type of request.
 #' @param params vector or list. List of named parameters.
 #' @param base_url character. Base URL for the REST API.
+#' @returns A request URL text string.
 #' @export
 
 adc_url <- function(option, params, base_url = "https://agrodatacube.wur.nl/api/v2/rest/") {

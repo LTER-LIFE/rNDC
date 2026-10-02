@@ -1,3 +1,14 @@
+#' Get meteo data for a long period
+#'
+#' Fetch _AgroDataCube_ meteo data for a station over a long period, by splitting
+#' it into chunks of `by_days` days (see [split_date_range()]) and combining the results.
+#'
+#' @inheritParams get_meteo_for_period
+#' @param page_size integer. Maximum number of rows per request.
+#' @param by_days integer. Length (in days) of each request.
+#' @param sleep_sec numeric. Seconds to wait between requests.
+#' @returns An sf object, or `NULL` (with a warning) if no data is returned.
+#' @export
 get_meteo_for_long_period <- function(meteostation,
                                       fromdate,
                                       todate,
@@ -46,5 +57,5 @@ get_meteo_for_long_period <- function(meteostation,
   }
   
   # Combine all sf objects
-  do.call(rbind, results)
+  suppressWarnings(do.call(rbind, results)) # observations have no geometry (empty bounding box)
 }

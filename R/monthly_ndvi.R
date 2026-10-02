@@ -1,3 +1,13 @@
+#' Average NDVI for a month
+#'
+#' Download the daily _GroenMonitor_ NDVI rasters of a month for the bounding box
+#' of an area of interest and average them. Days without data are skipped.
+#'
+#' @param poly sf. Area of interest (its bounding box is requested).
+#' @param year,month integer. Year and month.
+#' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
+#' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM`, or `NULL` if no data is available.
+#' @export
 download_avg_ndvi_month <- function(poly, year, month, epsg = 32631) {
 
   # ---- build month date range ----

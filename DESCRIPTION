@@ -2,20 +2,23 @@ Package: rNDC
 Title: R functions to interfaces with LTER-LIFE's NatureDataCube
 Version: 0.4
 Date: 2026-10-01
-Authors@R: c(
-  person(given = "Bruno",
-         family = "Marcos",
-         email = "brunoasmarcos@gmail.com",
-         role = c("aut", "cre")),
-  person(given = "Daan",
-         family = "Lichtenberg",
-         email = "D.Lichtenberg@nioo.knaw.nl",
-         role = "aut"),
-  person(given = "Minke",
-         family = "Mulder",
-         role = "aut"))
+Authors@R: c(person(given = "Bruno",
+                    family = "Marcos",
+                    email = "brunoasmarcos@gmail.com",
+                    role = c("aut", "cre")),
+             person(given = "Daan",
+                    family = "Lichtenberg",
+                    email = "D.Lichtenberg@nioo.knaw.nl",
+                    role = "aut"),
+             person(given = "Minke",
+                    family = "Mulder",
+                    role = "aut"))
 Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
 Depends: R (>= 4.1)
 Description: A set of functions and wrappers to facilitate finding and getting data from LTER-LIFE's NatureDataCube.
 License: Apache License (>= 2)
-Imports: terra, sf, rstac, httr, dplyr, purrr, tibble, jsonlite, lubridate, geojsonsf
+Imports: terra, sf, rstac, httr, dplyr, tibble, jsonlite, lubridate, geojsonsf, stats, utils
+RoxygenNote: 7.3.3
+Suggests: testthat (>= 3.2.0), webmockr, withr
+Config/testthat/edition: 3

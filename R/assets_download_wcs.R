@@ -2,11 +2,12 @@
 #'
 #' Wrapper to download data from STAC endpoints that originated in WCS servers.
 #'
-#' @param items doc_item. Items list resulting from `ndc_get`.
+#' @param items doc_items. Items list resulting from `ndc_get`.
+#' @param asset_names character. Names of the STAC assets to download.
 #' @param output_dir character. Output directory path.
 #' @param output_ext character. Output file extension.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
-#' @returns A request response list.
+#' @returns The `httr` response (or list of responses), or `NULL` if there is nothing to download.
 #' @export
 
 assets_download_wcs <- function(items, asset_names = "wcs",

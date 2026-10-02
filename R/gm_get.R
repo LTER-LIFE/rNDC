@@ -7,7 +7,7 @@
 #' @param params vector or list. List of named parameters.
 #' @param out_path character. Output path.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
-#' @returns A request response list.
+#' @returns The `httr` response. The file is written to `out_path`; an error is raised (and the file removed) if the request fails, e.g. when no coverage exists for the requested date.
 #' @export
 
 gm_get <- function(url, option = "NDVI", params, out_path = tempfile(), overwrite = TRUE) {
@@ -21,6 +21,10 @@ gm_get <- function(url, option = "NDVI", params, out_path = tempfile(), overwrit
 
   # Download file
   response <- GET(request_url, write_disk(out_path, overwrite = overwrite))
+  if (httr::http_error(response)) {
+    on.exit(unlink(out_path), add = TRUE)  # remove the saved error body
+    stop_for_http_error(response, "GroenMonitor")
+  }
 
   return(response)
 }

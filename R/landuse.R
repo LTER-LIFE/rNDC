@@ -1,12 +1,10 @@
 # Nature Data Cube Land Use raster retrieval helpers
 # ---------------------------------------------------
 
-landuse_endpoint <- "https://ndc-test.containers.wur.nl/api/"
-landuse_collection <- "ndc-geoserver-rasters"
+landuse_collection <- "lgn"
 landuse_asset_name <- "wcs"
 landuse_keyword <- "lgn"
 landuse_default_year <- 2024L
-landuse_year_choices <- c(2024L)
 landuse_subset_crs <- 32631L
 landuse_min_file_size <- 100000L
 
@@ -17,7 +15,7 @@ landuse_normalize_year <- function(year) {
 }
 
 landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
-                                     endpoint = landuse_endpoint,
+                                     endpoint = ndc_endpoint(),
                                      collection = landuse_collection,
                                      limit = 100) {
   meta <- stac_collect_metadata(
@@ -44,11 +42,10 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
   meta$layer_match <- grepl(landuse_keyword, meta$layer_lower, fixed = TRUE)
   meta$title_match <- grepl(landuse_keyword, meta$title_lower, fixed = TRUE)
 
-  meta <- dplyr::filter(meta, keyword_match | layer_match | title_match)
-  meta <- dplyr::filter(meta, !is.na(href), nzchar(href))
-  meta <- dplyr::distinct(meta, href, .keep_all = TRUE)
-  meta <- dplyr::arrange(meta, obs_date, title, id)
-  meta
+  meta <- meta[meta$keyword_match | meta$layer_match | meta$title_match, , drop = FALSE]
+  meta <- meta[!is.na(meta$href) & nzchar(meta$href), , drop = FALSE]
+  meta <- meta[!duplicated(meta$href), , drop = FALSE]
+  meta[order(meta$obs_date, meta$title, meta$id), , drop = FALSE]
 }
 
 #' Download Land Use raster for an area of interest
@@ -67,7 +64,7 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
 get_landuse_raster <- function(aoi,
                                year = landuse_default_year,
                                token = Sys.getenv("NDC_TOKEN"),
-                               endpoint = landuse_endpoint,
+                               endpoint = ndc_endpoint(),
                                collection = landuse_collection,
                                out_dir = tempdir(),
                                overwrite = TRUE,
@@ -92,7 +89,7 @@ get_landuse_raster <- function(aoi,
     stop("No Land Use raster items were found for the selected AOI.", call. = FALSE)
   }
 
-  meta <- dplyr::filter(meta, lubridate::year(obs_date) == year)
+  meta <- meta[!is.na(meta$obs_date) & lubridate::year(meta$obs_date) == year, , drop = FALSE]
   if (nrow(meta) == 0) {
     stop(
       paste0("No Land Use raster items matched year ", year, "."),
