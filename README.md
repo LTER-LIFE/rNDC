@@ -1,5 +1,8 @@
 # rNDC
 
+[![R-CMD-check](https://github.com/LTER-LIFE/rNDC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LTER-LIFE/rNDC/actions/workflows/R-CMD-check.yaml)
+[![live-checks](https://github.com/LTER-LIFE/rNDC/actions/workflows/live-checks.yaml/badge.svg)](https://github.com/LTER-LIFE/rNDC/actions/workflows/live-checks.yaml)
+
 This package provides an R-based interface to *NatureDataCube*.
 
 The idea of the *NatureDataCube* is to offer an accessible way for researchers/ecologists to retrieve relevant data.
@@ -30,7 +33,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ## Main R functions
 
-### Via the *NatureDataCube* STAC API (see [`examples_ndc.ipynb`](tests/examples_ndc.ipynb) and [`examples_stac.ipynb`](tests/examples_stac.ipynb))
+### Via the *NatureDataCube* STAC API (see [`01_getting_started.ipynb`](examples/01_getting_started.ipynb) and [`stac_with_rstac.ipynb`](examples/advanced/stac_with_rstac.ipynb))
 
 - [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query
 - [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters) in NatureDataCube.
@@ -46,14 +49,14 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 - [`get_nitrogen_raster`](R/nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
 - `stac_*` helpers ([`stac_raster_helpers.R`](R/stac_raster_helpers.R)): Shared building blocks for the functions above.
 
-### Via the *AgroDataCube* REST API (see [`examples_adc.ipynb`](tests/examples_adc.ipynb))
+### Via the *AgroDataCube* REST API (see [`agrodatacube_rest.ipynb`](examples/advanced/agrodatacube_rest.ipynb))
 
 - [`adc_url`](R/adc_url.R): Compose URL text string for submitting data requests through the REST API.
 - [`adc_get`](R/adc_get.R): Submit requests via REST API.
 - [`get_closest_meteostation`](R/get_closest_meteostation.R): Find the meteorological station closest to a study area.
 - [`get_meteo_for_date`](R/get_meteo_for_date.R), [`get_meteo_for_period`](R/get_meteo_for_period.R), [`get_meteo_for_long_period`](R/get_meteo_for_long_period.R): Get weather data for a station for one day, a period, or a long period split into several requests.
 
-### Via the *GroenMonitor* WCS GeoServer (see [`examples_gm.ipynb`](tests/examples_gm.ipynb))
+### Via the *GroenMonitor* WCS GeoServer (see [`groenmonitor_wcs.ipynb`](examples/advanced/groenmonitor_wcs.ipynb))
 
 - [`gm_url`](R/gm_url.R): Compose URL text string for submitting data requests through the *GroenMonitor* WCS GeoServer.
 - [`gm_get`](R/gm_get.R): Submit requests to the *GroenMonitor* WCS GeoServer.
@@ -61,7 +64,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ### Examples
 
-The notebooks in [`tests/`](tests) show each interface in use. [`examples_helpers.ipynb`](tests/examples_helpers.ipynb) covers the high-level functions above (study sites, land use, nitrogen, weather and monthly NDVI). They need network access and the `NDC_TOKEN` and `ADC_TOKEN` environment variables; `Rscript tools/run_notebooks.R` runs all of them as a check.
+The Jupyter notebooks in [`examples/`](examples) show each interface in use, starting with [`01_getting_started`](examples/01_getting_started.ipynb); see the [examples README](examples/README.md) for an overview. They need network access and the `NDC_TOKEN` and `ADC_TOKEN` environment variables.
 
 ### To be implemented
 

@@ -9,6 +9,14 @@
 Functions and wrappers to find and get data from the NatureDataCube STAC API,
 and from the related AgroDataCube and GroenMonitor services.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/LTER-LIFE/rNDC}
+  \item Report bugs at \url{https://github.com/LTER-LIFE/rNDC/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Bruno Marcos \email{brunoasmarcos@gmail.com}
 

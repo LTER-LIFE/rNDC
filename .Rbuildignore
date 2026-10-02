@@ -1,6 +1,7 @@
 ^CLAUDE\.md$
 ^aidecl\.yaml$
-^tests/.*\.ipynb$
+^examples$
+^\.github$
 ^\.idea$
 ^\.Rproj\.user$
 ^.*\.Rproj$

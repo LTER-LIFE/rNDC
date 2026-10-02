@@ -1,7 +1,7 @@
-# Run the code cells of the example notebooks in tests/ as plain R scripts, stopping at the first error.
+# Run the code cells of the example notebooks in examples/ as plain R scripts, stopping at the first error.
 # Requires network access and the NDC_TOKEN and ADC_TOKEN environment variables.
 #   Rscript tools/run_notebooks.R                    # all notebooks
-#   Rscript tools/run_notebooks.R examples_gm        # selected notebooks
+#   Rscript tools/run_notebooks.R 02_rasters 04_ndvi # selected notebooks (file names without extension)
 # The working tree is loaded with devtools::load_all(), so the installed rNDC is not used.
 
 suppressMessages({ library(jsonlite); library(devtools) })
@@ -29,6 +29,6 @@ run_notebook <- function(path) {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
-notebooks <- list.files(file.path(root, "tests"), pattern = "\\.ipynb$", full.names = TRUE)
+notebooks <- list.files(file.path(root, "examples"), pattern = "\\.ipynb$", full.names = TRUE, recursive = TRUE)
 if (length(args)) notebooks <- notebooks[tools::file_path_sans_ext(basename(notebooks)) %in% args]
 for (nb in notebooks) run_notebook(nb)
