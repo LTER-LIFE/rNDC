@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "rNDC: R interface to LTER-LIFE's NatureDataCube"
+abstract: >-
+  A set of functions and wrappers to facilitate finding and getting data from
+  LTER-LIFE's NatureDataCube.
+version: "0.4"
+date-released: 2026-10-01
+license: Apache-2.0
+repository-code: "https://github.com/LTER-LIFE/rNDC"
+url: "https://github.com/LTER-LIFE/rNDC"
+authors:
+  - family-names: Marcos
+    given-names: Bruno
+    email: b.a.santosmarcos@uva.nl
+    orcid: 0000-0001-5423-5890
+  - family-names: Lichtenberg
+    given-names: Daan
+    email: D.Lichtenberg@nioo.knaw.nl
+  - family-names: Mulder
+    given-names: Minke
+keywords:
+  - R
+  - LTER-LIFE
+  - NatureDataCube
+  - STAC
+  - Geospatial data
+  - Dutch nature areas

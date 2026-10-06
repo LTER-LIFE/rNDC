@@ -1,10 +1,10 @@
 Package: rNDC
-Title: R functions to interfaces with LTER-LIFE's NatureDataCube
+Title: R interface to LTER-LIFE's NatureDataCube
 Version: 0.4
 Date: 2026-10-01
 Authors@R: c(person(given = "Bruno",
                     family = "Marcos",
-                    email = "brunoasmarcos@gmail.com",
+                    email = "b.a.santosmarcos@uva.nl",
                     role = c("aut", "cre")),
              person(given = "Daan",
                     family = "Lichtenberg",
