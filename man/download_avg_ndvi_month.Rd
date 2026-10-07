@@ -20,3 +20,6 @@ A single-layer \code{SpatRaster} named \code{ndvi_mean_YYYYMM}, or \code{NULL} i
 Download the daily \emph{GroenMonitor} NDVI rasters of a month for the bounding box
 of an area of interest and average them. Days without data are skipped.
 }
+\seealso{
+\code{\link[=ndc_with_progress]{ndc_with_progress()}} to follow the downloads, or to stop them.
+}

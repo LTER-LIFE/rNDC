@@ -37,3 +37,6 @@ An sf object, or \code{NULL} (with a warning) if no data is returned.
 Fetch \emph{AgroDataCube} meteo data for a station over a long period, by splitting
 it into chunks of \code{by_days} days (see \code{\link[=split_date_range]{split_date_range()}}) and combining the results.
 }
+\seealso{
+\code{\link[=ndc_with_progress]{ndc_with_progress()}} to follow the requests, or to stop them.
+}

@@ -65,6 +65,10 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 - [`gm_get`](R/gm_get.R): Submit requests to the *GroenMonitor* WCS GeoServer.
 - [`download_avg_ndvi_month`](R/monthly_ndvi.R), [`download_avg_ndvi_stack`](R/monthly_ndvi_period.R): Compute the average NDVI raster for a month, or a stack of monthly averages over a period.
 
+### Long downloads
+
+- [`ndc_with_progress`](R/ndc_progress.R): Follow, or stop, functions that make many requests (`get_meteo_for_long_period`, `download_avg_ndvi_month`, `download_avg_ndvi_stack`): they report the request that starts to a `report` function, and stop with an error of class `rNDC_interrupted` when an `interrupt` function says so. Used by [rNDC.Shiny](https://github.com/LTER-LIFE/rNDC-Shiny) for its progress bar.
+
 ### Examples
 
 The Jupyter notebooks in [`examples/`](examples) show each interface in use, starting with [`01_getting_started`](examples/01_getting_started.ipynb); see the [examples README](examples/README.md) for an overview. They need network access and the `NDC_TOKEN` and `ADC_TOKEN` environment variables.

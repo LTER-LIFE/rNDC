@@ -4,8 +4,14 @@ project:
   content_type: "software"
 ai_usage:
   used: true
-  summary: "Used to for code improvement and completion."
-  level: "moderate"
+  summary: "Windsurf was used for code completion. Claude Code was used, on request of the maintainer, to improve and optimize code, to add the helpers that the Shiny app rNDC.Shiny needs (retrieving all pages of results, NDVI statistics, the defaults and available years of the land use and nitrogen rasters, and progress reports and interruption of long downloads), to write the automated tests and the CI workflows, and to update the documentation. The maintainer specified the tasks and decides which changes are committed."
+  level: "extensive"
+  activities:
+    - code_generation
+    - refactoring
+    - testing
+    - infrastructure
+    - documentation
   tools:
     - name: "Windsurf"
       type: "assistant"
@@ -13,8 +19,8 @@ ai_usage:
       contribution: "Code completion within Positron IDE."
     - name: "Claude Code Sonnet 5.5"
       type: "assistant"
-      level: "moderate"
-      contribution: "Improve and optimize code."
+      level: "extensive"
+      contribution: "Improve and optimize code; new helper functions, tests, CI and documentation."
 declaration:
-  date: "2026-10-01"
+  date: "2026-10-07"
   declared_by: "Bruno Marcos"

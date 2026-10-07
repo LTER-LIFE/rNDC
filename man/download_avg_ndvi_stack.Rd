@@ -27,3 +27,6 @@ A \code{SpatRaster} with one layer per month with data (named \code{ndvi_mean_YY
 Compute the monthly average NDVI (see \code{\link[=download_avg_ndvi_month]{download_avg_ndvi_month()}}) for every
 month between two months, and stack the results on a common grid.
 }
+\seealso{
+\code{\link[=ndc_with_progress]{ndc_with_progress()}} to follow the downloads, or to stop them.
+}

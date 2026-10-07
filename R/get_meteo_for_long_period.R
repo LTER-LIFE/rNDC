@@ -8,6 +8,7 @@
 #' @param by_days integer. Length (in days) of each request.
 #' @param sleep_sec numeric. Seconds to wait between requests.
 #' @returns An sf object, or `NULL` (with a warning) if no data is returned.
+#' @seealso [ndc_with_progress()] to follow the requests, or to stop them.
 #' @export
 get_meteo_for_long_period <- function(meteostation,
                                       fromdate,
@@ -23,15 +24,15 @@ get_meteo_for_long_period <- function(meteostation,
   
   for (i in seq_len(nrow(ranges))) {
     
-    message(
-      sprintf(
-        "Downloading %s -> %s (%d/%d)",
-        ranges$from[i],
-        ranges$to[i],
-        i,
-        nrow(ranges)
-      )
+    msg <- sprintf(
+      "Downloading %s -> %s (%d/%d)",
+      ranges$from[i],
+      ranges$to[i],
+      i,
+      nrow(ranges)
     )
+    message(msg)
+    ndc_progress(msg, i, nrow(ranges))
     
     res <- get_meteo_for_period(
       meteostation = meteostation,

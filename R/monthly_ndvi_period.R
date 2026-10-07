@@ -7,6 +7,7 @@
 #' @param start_year,start_month,end_year,end_month integer. First and last month (both included).
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
 #' @returns A `SpatRaster` with one layer per month with data (named `ndvi_mean_YYYYMM`), or `NULL` if no data is available.
+#' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
 download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end_month, epsg = 32631) {
 
@@ -27,6 +28,11 @@ download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end
   tmpdir <- file.path(tempdir(), paste0("ndvi_temp_", as.integer(Sys.time())))
   dir.create(tmpdir, recursive = TRUE, showWarnings = FALSE)
   
+  # the daily tiles are removed when the function ends, also when it is interrupted (see ndc_with_progress())
+  on.exit(unlink(tmpdir, recursive = TRUE, force = TRUE), add = TRUE)
+  n_days <- sum(as.integer(ceiling_date(month_seq, "month") - month_seq))
+  done_days <- 0L
+  
   for (m in month_seq) {
     m <- as.Date(m)
     year_m  <- year(m)
@@ -41,6 +47,8 @@ download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end
     files <- character(0)
     
     for (dstr in dates_str) {
+      done_days <- done_days + 1L
+      ndc_progress(sprintf("Downloading NDVI %s (%d/%d)", as.Date(dstr, "%Y%m%d"), done_days, n_days), done_days, n_days)
       coverage_id <- paste0("groenmonitor__ndvi_", dstr)
       myurl <- paste0(
         wcs_base,

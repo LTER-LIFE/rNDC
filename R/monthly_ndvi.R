@@ -7,6 +7,7 @@
 #' @param year,month integer. Year and month.
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
 #' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM`, or `NULL` if no data is available.
+#' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
 download_avg_ndvi_month <- function(poly, year, month, epsg = 32631) {
 
@@ -43,7 +44,9 @@ download_avg_ndvi_month <- function(poly, year, month, epsg = 32631) {
   dates <- seq(start_date, end_date, by = "day")
   dates_str <- format(dates, "%Y%m%d")
   
-  for (dstr in dates_str) {
+  for (k in seq_along(dates_str)) {
+    dstr <- dates_str[k]
+    ndc_progress(sprintf("Downloading NDVI %s (%d/%d)", dates[k], k, length(dates)), k, length(dates))
     coverage_id <- paste0("groenmonitor__ndvi_", dstr)
     
     myurl <- paste0(
