@@ -9,9 +9,11 @@ ai_usage:
   tools:
     - name: "Windsurf"
       type: "assistant"
+      level: "moderate"
       contribution: "Code completion within Positron IDE."
     - name: "Claude Code Sonnet 5.5"
       type: "assistant"
+      level: "moderate"
       contribution: "Improve and optimize code."
 declaration:
   date: "2026-10-01"
