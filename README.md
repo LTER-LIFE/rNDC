@@ -24,8 +24,8 @@ API tokens are read from environment variables (or can be passed through the `to
 
 | Variable | Used by |
 |---|---|
-| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `get_landuse_raster`, `get_nitrogen_raster` |
-| `ADC_TOKEN` | `adc_get` (and the meteo functions built on it, which take `token` explicitly) |
+| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `get_landuse_raster`, `get_nitrogen_raster`, `get_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
+| `ADC_TOKEN` | `adc_get`, `adc_get_all` (and the meteo functions built on them, which take `token` explicitly) |
 
 For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`.
 
@@ -35,7 +35,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ### Via the *NatureDataCube* STAC API (see [`01_getting_started.ipynb`](examples/01_getting_started.ipynb) and [`stac_with_rstac.ipynb`](examples/advanced/stac_with_rstac.ipynb))
 
-- [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query
+- [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first)
 - [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters) in NatureDataCube.
 - [`ndc_count`](R/ndc_count.R): Obtain a number of items available in NatureDataCube datasets (optionally constrained by query parameters).
 - [`ndc_roi`](R/ndc_roi.R): Import and transform spatial region of interest.
@@ -47,12 +47,15 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 - [`get_landuse_raster`](R/landuse.R): Download the Land Use raster for an area of interest and year, clipped to the area.
 - [`get_nitrogen_raster`](R/nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
+- [`ndc_landuse_years`, `ndc_nitrogen_years`, `ndc_landuse_default_year`, `ndc_nitrogen_layers`, `ndc_landuse_collection`](R/ndc_defaults.R): The years for which these rasters exist (read from the STAC API), and their defaults.
+- [`get_ndvi_stats`](R/ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
 - `stac_*` helpers ([`stac_raster_helpers.R`](R/stac_raster_helpers.R)): Shared building blocks for the functions above.
 
 ### Via the *AgroDataCube* REST API (see [`agrodatacube_rest.ipynb`](examples/advanced/agrodatacube_rest.ipynb))
 
 - [`adc_url`](R/adc_url.R): Compose URL text string for submitting data requests through the REST API.
 - [`adc_get`](R/adc_get.R): Submit requests via REST API.
+- [`adc_get_all`](R/adc_get_all.R): Submit a request whose results are paged (e.g. `Fields`) and combine all the pages.
 - [`get_closest_meteostation`](R/get_closest_meteostation.R): Find the meteorological station closest to a study area.
 - [`get_meteo_for_date`](R/get_meteo_for_date.R), [`get_meteo_for_period`](R/get_meteo_for_period.R), [`get_meteo_for_long_period`](R/get_meteo_for_long_period.R): Get weather data for a station for one day, a period, or a long period split into several requests.
 

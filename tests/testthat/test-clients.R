@@ -90,12 +90,6 @@ test_that("adc_get rejects unknown servers", {
   expect_error(adc_get(option = "Fields", params = c(a = "1"), server = "zzz"), "Unknown `server`")
 })
 
-with_adc_stubs <- function(env = parent.frame()) {
-  webmockr::enable(adapter = "httr", quiet = TRUE)
-  withr::defer({ webmockr::stub_registry_clear(); webmockr::disable(adapter = "httr", quiet = TRUE) },
-               envir = env)
-}
-
 station_feature <- function(id, x, y) {
   list(type = "Feature", geometry = list(type = "Point", coordinates = c(x, y)),
        properties = list(meteostationid = id))

@@ -14,7 +14,8 @@ ndc_get(
   mode = "items",
   output_dir = tempdir(),
   overwrite = TRUE,
-  progress = FALSE
+  progress = FALSE,
+  all_pages = FALSE
 )
 }
 \arguments{
@@ -30,16 +31,18 @@ ndc_get(
 
 \item{token}{character. API token.}
 
-\item{mode}{character. Output mode, one of \code{items} (default; first page of results), \code{fetch} (all pages), \code{tibble}, \code{sf}, \code{sfc}, \code{download} or \code{download_wcs}.}
+\item{mode}{character. Output mode, one of \code{items} (default; first page of results), \code{fetch} (all pages), \code{tibble}, \code{sf}, \code{sfc}, \code{download} or \code{download_wcs}. Without \code{all_pages}, the last five only use the first page of results.}
 
 \item{output_dir}{character. Output directory path.}
 
 \item{overwrite}{boolean. If \code{TRUE}, overwrite file.}
 
 \item{progress}{boolean. If \code{TRUE}, show progress bar.}
+
+\item{all_pages}{boolean. If \code{TRUE}, the modes that convert or download only the first page (\code{tibble}, \code{sf}, \code{sfc}, \code{download} and \code{download_wcs}) first retrieve all the pages of the search, as \code{mode = "fetch"} does (\code{limit} is then the size of each page). Has no effect on the modes \code{items} (first page) and \code{fetch} (all pages already).}
 }
 \value{
-Depends on \code{mode}: a STAC item collection (\code{items}, \code{fetch}), a tibble, an sf or sfc object, or the result of downloading the assets.
+Depends on \code{mode}: a STAC item collection (\code{items}, \code{fetch}), a tibble, an sf or sfc object (empty if nothing matches), or the result of downloading the assets.
 }
 \description{
 Search (and optionally download) data from NatureDataCube, through a custom STAC query.

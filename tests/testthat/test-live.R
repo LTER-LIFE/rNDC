@@ -51,3 +51,39 @@ test_that("GroenMonitor serves NDVI for a known date and rejects unknown ones", 
   p["date"] <- "20251001"
   expect_error(gm_get(url = gm_url("NDVI", p), out_path = withr::local_tempfile(fileext = ".tif")), "HTTP 404")
 })
+
+test_that("all pages of a search can be retrieved", {
+  skip_unless_live()
+  matched <- ndc_count(collection = "lter")
+  skip_if(matched < 3, "too few items to page")
+  first_page <- suppressWarnings(ndc_get("lter", mode = "sf", limit = 2))
+  expect_equal(nrow(first_page), 2)
+  all <- ndc_get("lter", mode = "sf", limit = 2, all_pages = TRUE)
+  expect_equal(nrow(all), matched)
+})
+
+test_that("AgroDataCube results are retrieved page by page", {
+  skip_unless_live()
+  poly <- "POLYGON((5.70 52.00,5.85 52.00,5.85 52.10,5.70 52.10,5.70 52.00))"  # several hundred fields
+  fields <- adc_get_all("Fields", c(geometry = poly, epsg = "4326", year = "2024", output_epsg = "4326"),
+                        token = Sys.getenv("ADC_TOKEN"))
+  expect_gt(length(fields$features), 100)
+})
+
+test_that("monthly NDVI statistics are available for a project polygon", {
+  skip_unless_live()
+  lter <- ndc_get("lter", mode = "sf", all_pages = TRUE)
+  poly <- lter[lter$name == "Loobos", ][1, ]
+  stats <- get_ndvi_stats(poly, "ndvi-lter", from = "2024-05-01", to = "2024-07-31")
+  expect_gt(nrow(stats), 0)
+  expect_setequal(unique(stats$ndc_id), as.character(poly$ndc_id))  # only the polygon itself
+  expect_equal(anyDuplicated(stats$month), 0)
+  expect_true(all(stats$ndvi_mean > -1 & stats$ndvi_mean < 1))
+})
+
+test_that("the years of the land use and nitrogen rasters are known", {
+  skip_unless_live()
+  expect_true(as.character(ndc_landuse_default_year()) %in% ndc_landuse_years())
+  expect_true(all(c("2024", "2025") %in% ndc_nitrogen_years()))
+})
+

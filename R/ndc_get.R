@@ -8,16 +8,17 @@
 #' @param limit integer. Maximum number of STAC Items to return. Note that for `mode = "items"` only the first page of at most `limit` items is returned; compare with the number matched.
 #' @param token character. API token.
 #' @param asset_names character. Names of the STAC assets to download (for the `download` and `download_wcs` modes).
-#' @param mode character. Output mode, one of `items` (default; first page of results), `fetch` (all pages), `tibble`, `sf`, `sfc`, `download` or `download_wcs`.
+#' @param mode character. Output mode, one of `items` (default; first page of results), `fetch` (all pages), `tibble`, `sf`, `sfc`, `download` or `download_wcs`. Without `all_pages`, the last five only use the first page of results.
 #' @param output_dir character. Output directory path.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
 #' @param progress boolean. If `TRUE`, show progress bar.
-#' @returns Depends on `mode`: a STAC item collection (`items`, `fetch`), a tibble, an sf or sfc object, or the result of downloading the assets.
+#' @param all_pages boolean. If `TRUE`, the modes that convert or download only the first page (`tibble`, `sf`, `sfc`, `download` and `download_wcs`) first retrieve all the pages of the search, as `mode = "fetch"` does (`limit` is then the size of each page). Has no effect on the modes `items` (first page) and `fetch` (all pages already).
+#' @returns Depends on `mode`: a STAC item collection (`items`, `fetch`), a tibble, an sf or sfc object (empty if nothing matches), or the result of downloading the assets.
 #' @export
 
 ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL,
                     limit = 100, token = Sys.getenv("NDC_TOKEN"), mode = "items",
-                    output_dir = tempdir(), overwrite = TRUE, progress = FALSE) {
+                    output_dir = tempdir(), overwrite = TRUE, progress = FALSE, all_pages = FALSE) {
   
   mode <- match.arg(mode, c("items", "fetch", "tibble", "sf", "sfc", "download", "download_wcs"))
 
@@ -37,6 +38,9 @@ ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL,
     query <- stac_search(query, datetime = datetime, limit = limit)
   }
   items <- post_request(query, headers)
+  if (all_pages && mode %in% c("tibble", "sf", "sfc", "download", "download_wcs")) {
+    items <- items_fetch(items, progress = progress, headers)
+  }
 
   # Only the first page is converted/downloaded in these modes: warn if it is incomplete
   n_matched <- items$numberMatched
