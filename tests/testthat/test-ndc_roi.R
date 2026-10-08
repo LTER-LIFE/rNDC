@@ -38,3 +38,25 @@ test_that("files are read", {
   sf::st_write(square_4326(), f, quiet = TRUE)
   expect_equal(as.numeric(sf::st_bbox(ndc_roi(f))), c(0.1, 0.1, 0.9, 0.9))
 })
+
+test_that("a file with several layers is read layer by layer", {
+  f <- tempfile(fileext = ".gpkg")
+  sf::st_write(square_4326(0.1, 0.1, 0.9, 0.9), f, layer = "a", quiet = TRUE)
+  sf::st_write(square_4326(2, 2, 3, 3), f, layer = "b", quiet = TRUE)
+
+  expect_equal(as.numeric(sf::st_bbox(ndc_roi(f, layer = "b"))), c(2, 2, 3, 3))
+  expect_no_warning(ndc_roi(f, layer = "a"))
+
+  # without `layer` the first one is used, and the caller is told
+  expect_warning(r <- ndc_roi(f), "2 layers \\(a, b\\).*using 'a'")
+  expect_equal(as.numeric(sf::st_bbox(r)), c(0.1, 0.1, 0.9, 0.9))
+
+  expect_error(ndc_roi(f, layer = "nope"), "Layer 'nope' not found.*a, b")
+})
+
+test_that("the bundled study sites file can be used as a RoI, by layer", {
+  f <- system.file("extdata/study_sites.gpkg", package = "rNDC")
+  site <- ndc_sites()[1]
+  expect_no_warning(r <- ndc_roi(f, layer = site))
+  expect_equal(as.numeric(sf::st_bbox(r)), as.numeric(sf::st_bbox(ndc_roi(ndc_sites(site)))))
+})

@@ -18,7 +18,8 @@ get_nitrogen_raster(
 )
 }
 \arguments{
-\item{aoi}{An sf object (area of interest).}
+\item{aoi}{sf, sfc, numeric or character. Area of interest, see \code{\link[=ndc_roi]{ndc_roi()}}: an sf/sfc object, a
+bounding box (\verb{xmin, ymin, xmax, ymax}, EPSG:4326) or a path to a file with the geometry.}
 
 \item{year}{Year to retrieve (e.g. "2024", "2025", "2040").}
 
@@ -40,7 +41,9 @@ nitrogen layers (\code{nitrogen_layer_choices}).}
 \item{file_prefix}{Optional file prefix.}
 }
 \value{
-A list with the rasters, the raster stack, the file paths and the metadata.
+A list with \code{rasters} (a named list of clipped \code{SpatRaster}s, named \verb{<layer>_<year>}), \code{stack} (a
+\code{SpatRaster} with one layer per raster), \code{files} (the paths of the downloaded files) and \code{metadata} (a
+tibble with one row per layer and year). An error is raised if no item matches.
 }
 \description{
 Download Nitrogen raster layers for an area of interest

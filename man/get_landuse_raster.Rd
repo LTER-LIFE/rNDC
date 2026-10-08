@@ -19,7 +19,8 @@ get_landuse_raster(
 )
 }
 \arguments{
-\item{aoi}{An sf object (area of interest).}
+\item{aoi}{sf, sfc, numeric or character. Area of interest, see \code{\link[=ndc_roi]{ndc_roi()}}: an sf/sfc object, a
+bounding box (\verb{xmin, ymin, xmax, ymax}, EPSG:4326) or a path to a file with the geometry.}
 
 \item{year}{Year to retrieve (defaults to \code{landuse_default_year}).}
 
@@ -38,7 +39,9 @@ get_landuse_raster(
 \item{subset_crs, min_file_size}{Internal retrieval parameters.}
 }
 \value{
-A list with the raster and metadata, or NULL.
+A list with \code{rasters} (a named list of clipped \code{SpatRaster}s), \code{stack} (a \code{SpatRaster} with one layer
+per raster), \code{files} (the paths of the downloaded files) and \code{metadata} (a tibble with one row per STAC
+item). An error is raised if no item matches the area and year.
 }
 \description{
 Download Land Use raster for an area of interest

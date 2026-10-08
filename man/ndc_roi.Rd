@@ -4,10 +4,13 @@
 \alias{ndc_roi}
 \title{Spatial region of interest}
 \usage{
-ndc_roi(roi = NULL)
+ndc_roi(roi = NULL, layer = NULL)
 }
 \arguments{
 \item{roi}{character, numeric or sf. Region of interest. Can be either: (i) a character pointing to a path of a file containing a custom geometry, (ii) a numeric vector with four coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.}
+
+\item{layer}{character. Layer to read when \code{roi} is a path to a file with several layers (e.g. a GeoPackage such as the
+one of \code{\link[=ndc_sites]{ndc_sites()}}). By default the first layer is used, with a warning if there are more. Ignored otherwise.}
 }
 \value{
 An sfc object in EPSG:4326 (or \code{NULL} if \code{roi} is \code{NULL}). If the RoI has no CRS, EPSG:4326 is assumed.

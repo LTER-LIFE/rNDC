@@ -40,7 +40,8 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
 
 #' Download Land Use raster for an area of interest
 #'
-#' @param aoi An sf object (area of interest).
+#' @param aoi sf, sfc, numeric or character. Area of interest, see [ndc_roi()]: an sf/sfc object, a
+#'   bounding box (`xmin, ymin, xmax, ymax`, EPSG:4326) or a path to a file with the geometry.
 #' @param year Year to retrieve (defaults to \code{landuse_default_year}).
 #' @param token API token (defaults to the NDC_TOKEN env var).
 #' @param endpoint,collection STAC endpoint and collection.
@@ -49,7 +50,9 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
 #' @param subset_crs,min_file_size Internal retrieval parameters.
-#' @return A list with the raster and metadata, or NULL.
+#' @return A list with `rasters` (a named list of clipped `SpatRaster`s), `stack` (a `SpatRaster` with one layer
+#'   per raster), `files` (the paths of the downloaded files) and `metadata` (a tibble with one row per STAC
+#'   item). An error is raised if no item matches the area and year.
 #' @export
 get_landuse_raster <- function(aoi,
                                year = landuse_default_year,

@@ -73,7 +73,8 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
 
 #' Download Nitrogen raster layers for an area of interest
 #'
-#' @param aoi An sf object (area of interest).
+#' @param aoi sf, sfc, numeric or character. Area of interest, see [ndc_roi()]: an sf/sfc object, a
+#'   bounding box (`xmin, ymin, xmax, ymax`, EPSG:4326) or a path to a file with the geometry.
 #' @param year Year to retrieve (e.g. "2024", "2025", "2040").
 #' @param layers Character vector of layer names. Defaults to all available
 #'   nitrogen layers (\code{nitrogen_layer_choices}).
@@ -84,7 +85,9 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
 #' @param overwrite Overwrite existing files.
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
-#' @return A list with the rasters, the raster stack, the file paths and the metadata.
+#' @return A list with `rasters` (a named list of clipped `SpatRaster`s, named `<layer>_<year>`), `stack` (a
+#'   `SpatRaster` with one layer per raster), `files` (the paths of the downloaded files) and `metadata` (a
+#'   tibble with one row per layer and year). An error is raised if no item matches.
 #' @export
 get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, token = Sys.getenv("NDC_TOKEN"),
                                 endpoint = ndc_endpoint(),

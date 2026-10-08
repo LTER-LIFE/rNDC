@@ -48,7 +48,6 @@ stac_make_headers <- function(token) {
 }
 
 #' @rdname stac_helpers
-#' @export
 stac_keywords_to_vec <- function(x) {
   if (is.null(x)) return(character(0))
   x <- unlist(x, use.names = FALSE)
@@ -63,7 +62,6 @@ stac_keywords_to_vec <- function(x) {
 }
 
 #' @rdname stac_helpers
-#' @export
 stac_feature_meta <- function(feat, asset_name = "wcs") {
   props <- feat$properties %||% list()
   assets <- feat$assets %||% list()
@@ -129,7 +127,6 @@ stac_year_trange <- function(year) {
 }
 
 #' @rdname stac_helpers
-#' @export
 stac_bbox_in_crs <- function(aoi, target_crs = 32631L) {
   aoi_4326 <- ndc_roi(aoi)
   aoi_sf <- sf::st_as_sf(aoi_4326)
@@ -240,14 +237,12 @@ stac_clip_raster_to_aoi <- function(r, aoi) {
 }
 
 #' @rdname stac_helpers
-#' @export
 stac_make_file_prefix <- function(x) {
   if (is.null(x) || !nzchar(as.character(x))) return("")
   paste0(gsub("[^A-Za-z0-9_\\-]+", "_", as.character(x)), "_")
 }
 
 #' @rdname stac_helpers
-#' @export
 stac_build_stack <- function(clipped) {
   if (length(clipped) == 0) return(NULL)
   if (length(clipped) == 1) clipped[[1]] else terra::rast(clipped)
