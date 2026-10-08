@@ -13,6 +13,7 @@
   `download_avg_ndvi_month()`, `download_avg_ndvi_stack()`), and lets the caller stop them.
 * `ndc_roi()` gains `layer`, to choose a layer of a file with several layers (such as the bundled
   `study_sites.gpkg`). Without it the first layer is used, with a warning if there are more.
+* `ndc_datasets()` gains `collections`, to list and count only some collections (the list of the API is then not requested).
 * `stac_year_trange()` builds a time range from years, and `stac_collect_metadata()` gains `trange`.
 
 ## Changes

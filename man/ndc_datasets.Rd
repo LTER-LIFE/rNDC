@@ -9,7 +9,8 @@ ndc_datasets(
   trange = NULL,
   token = Sys.getenv("NDC_TOKEN"),
   total = FALSE,
-  matched = FALSE
+  matched = FALSE,
+  collections = NULL
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ ndc_datasets(
 \item{total}{boolean. If \code{TRUE}, return total number of STAC Items for each STAC Collection.}
 
 \item{matched}{boolean. If \code{TRUE}, return matched number of STAC Items for each STAC Collection.}
+
+\item{collections}{character. Optional: the IDs of the collections to list (and count), instead of all of them. They are not checked against the list of the API, which is then not requested; a collection that does not exist is an error when its items are counted.}
 }
 \value{
 character or data frame. List of STAC Collections and (optionally) the total and/or matched STAC Items count.
