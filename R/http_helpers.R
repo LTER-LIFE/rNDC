@@ -11,7 +11,9 @@ stop_for_http_error <- function(response, service) {
   msg <- trimws(gsub("[[:space:]]+", " ", gsub("[\"{}]", "", msg)))
   if (nchar(msg) > 300) msg <- paste0(substr(msg, 1, 300), "...")
 
-  stop(sprintf("%s request failed (HTTP %s)%s", service, httr::status_code(response),
-               if (nzchar(msg)) paste0(": ", msg) else "."),
-       call. = FALSE)
+  # a classed error, so that callers can tell e.g. a missing resource (404) from a server failure
+  stop(structure(class = c("rNDC_http_error", "error", "condition"),
+                 list(message = sprintf("%s request failed (HTTP %s)%s", service, httr::status_code(response),
+                                        if (nzchar(msg)) paste0(": ", msg) else "."),
+                      call = NULL, status = httr::status_code(response))))
 }

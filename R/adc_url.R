@@ -30,6 +30,10 @@ adc_url <- function(option, params, base_url = "https://agrodatacube.wur.nl/api/
                     "KPI_Greenness"     = "datapackage/kpi/greenness",
                     "KPI_Croprotation"  = "datapackage/kpi/croprotation")
 
+  if (length(option) != 1 || !option %in% names(data_options)) {
+    stop("Unknown `option`: use one of ", paste(names(data_options), collapse = ", "), ".", call. = FALSE)
+  }
+
   # Compose root URL
   if ((option == "NDVI") && ("fieldid" %in% names(params))) {
     root_url <- paste0(base_url, "fields/", params["fieldid"], "/", data_options[option])
@@ -43,7 +47,7 @@ adc_url <- function(option, params, base_url = "https://agrodatacube.wur.nl/api/
 
     # Remove NAs
     params_nona <- lapply(na.omit(params),
-                          FUN = function(x) URLencode(x, repeated = TRUE))
+                          FUN = function(x) URLencode(x, reserved = TRUE))
 
     # Format parameters for weather data
     if ((option == "Meteo_stations") && ("meteostation" %in% names(params_nona))) {

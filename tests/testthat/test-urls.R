@@ -26,3 +26,9 @@ test_that("ndc_endpoint can be overridden by an option", {
   withr::local_options(rNDC.endpoint = "https://example.org/api/")
   expect_equal(ndc_endpoint(), "https://example.org/api/")
 })
+
+test_that("adc_url encodes reserved characters in values and rejects unknown options", {
+  u <- adc_url("Fields", params = c(geometry = "a&b=c/d", page_size = "10"))
+  expect_equal(u, "https://agrodatacube.wur.nl/api/v2/rest/fields?geometry=a%26b%3Dc%2Fd&page_size=10")
+  expect_error(adc_url("Nope", params = c(a = "1")), "Unknown `option`")
+})

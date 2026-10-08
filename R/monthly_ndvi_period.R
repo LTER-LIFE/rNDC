@@ -14,122 +14,48 @@ download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end
   start_date <- as.Date(sprintf("%04d-%02d-01", start_year, start_month))
   end_date   <- as.Date(sprintf("%04d-%02d-01", end_year, end_month))
   month_seq  <- seq(start_date, end_date, by = "month")
-  
-  poly_utm <- st_transform(poly, epsg)
-  bb <- st_bbox(poly_utm)
-  xmin <- bb["xmin"]; xmax <- bb["xmax"]; ymin <- bb["ymin"]; ymax <- bb["ymax"]
-  
-  wcs_base <- "https://data.groenmonitor.nl/geoserver/wcs?"
-  format_param <- "image/tiff"
-  
-  raster_list <- list()
-  
-  # create unique temp dir for daily tiles
-  tmpdir <- file.path(tempdir(), paste0("ndvi_temp_", as.integer(Sys.time())))
-  dir.create(tmpdir, recursive = TRUE, showWarnings = FALSE)
-  
+  bbox <- gm_bbox(poly, epsg)
+
   # the daily tiles are removed when the function ends, also when it is interrupted (see ndc_with_progress())
+  tmpdir <- tempfile("ndvi_temp_")
+  dir.create(tmpdir, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(tmpdir, recursive = TRUE, force = TRUE), add = TRUE)
+
   n_days <- sum(as.integer(ceiling_date(month_seq, "month") - month_seq))
   done_days <- 0L
-  
-  for (m in month_seq) {
-    m <- as.Date(m)
-    year_m  <- year(m)
-    month_m <- as.integer(format(m, "%m"))
+  raster_list <- list()
+
+  for (m in as.list(month_seq)) {
     message("Processing ", format(m, "%B %Y"))
-    
-    start_day <- m
-    end_day   <- ceiling_date(m, "month") - 1
-    dates <- seq(start_day, end_day, by = "day")
-    dates_str <- format(dates, "%Y%m%d")
-    
-    files <- character(0)
-    
-    for (dstr in dates_str) {
-      done_days <- done_days + 1L
-      ndc_progress(sprintf("Downloading NDVI %s (%d/%d)", as.Date(dstr, "%Y%m%d"), done_days, n_days), done_days, n_days)
-      coverage_id <- paste0("groenmonitor__ndvi_", dstr)
-      myurl <- paste0(
-        wcs_base,
-        "service=WCS&version=2.0.1&request=GetCoverage",
-        "&coverageId=", coverage_id,
-        "&subset=E(", xmin, ",", xmax, ")",
-        "&subset=N(", ymin, ",", ymax, ")",
-        "&format=", format_param
-      )
-      
-      myfile <- file.path(tmpdir, paste0("ndvi_", dstr, ".tif"))
-      ok <- tryCatch({ suppressWarnings(download.file(myurl, myfile, mode = "wb", quiet = TRUE)); TRUE },
-                     error = function(e) FALSE)
-      if (ok && file.exists(myfile) && file.info(myfile)$size > 0) files <- c(files, myfile)
-    }
-    
-    if (length(files) == 0) {
+    year_m <- year(m)
+    month_m <- as.integer(format(m, "%m"))
+
+    files <- gm_download_month(year_m, month_m, bbox, tmpdir, done = done_days, total = n_days)
+    done_days <- done_days + as.integer(ceiling_date(m, "month") - m)
+
+    r_mean <- gm_month_mean(files, year_m, month_m)
+    if (is.null(r_mean)) {
       message("No NDVI data available for ", format(m, "%B %Y"))
-      next
+    } else {
+      raster_list[[length(raster_list) + 1]] <- r_mean
     }
-    
-    # read daily rasters; catching small geometry mismatches and resampling to first layer if needed
-    r_stack_daily <- tryCatch(rast(files), error = function(e) {
-      # attempt progressive reading + resampling
-      rs <- list()
-      for (f in files) {
-        r <- tryCatch(rast(f), error = function(e2) NULL)
-        if (!is.null(r)) rs[[length(rs)+1]] <- r
-      }
-      if (length(rs) == 0) stop("Failed to read any daily rasters")
-      # align all to the first raster
-      base <- rs[[1]]
-      for (j in seq_along(rs)) {
-        if (!compareGeom(base, rs[[j]], stopOnError = FALSE)) {
-          rs[[j]] <- tryCatch(resample(rs[[j]], base, method = "bilinear"), error = function(e) extend(rs[[j]], base))
-        }
-      }
-      do.call(c, rs)
-    })
-    
-    # compute monthly mean
-    r_mean <- app(r_stack_daily, mean, na.rm = TRUE)
-    r_mean[is.nan(r_mean)] <- NA
-    names(r_mean) <- paste0("ndvi_mean_", year_m, sprintf("%02d", month_m))
-    
-    raster_list[[length(raster_list) + 1]] <- r_mean
-    
-    # cleanup daily tiles for this month
-    try(unlink(files))
   }
-  
-  # final cleanup of tempdir could be left to system or done here
-  # but keep the directory (it is unique) or remove it:
-  # unlink(tmpdir, recursive = TRUE)
-  
+
   if (length(raster_list) == 0) {
     message("No NDVI data available for the selected range")
     return(NULL)
   }
-  
-  # ---------------------------------------------------------------------------
-  # FIX (cross-month alignment)
-  # The WCS snaps each month's coverage to its own acquisition grid, so the
-  # monthly means come back on slightly different extents. Combining them with
-  # rast() then fails with "[rast] extents do not match". Align every monthly
-  # mean to one reference grid (the largest, so nothing is cropped) first.
-  # Resampling preserves each layer name (ndvi_mean_YYYYMM), so labels stay
-  # correct even when some months were skipped for lack of data.
-  # ---------------------------------------------------------------------------
+
+  # The WCS snaps each month's coverage to its own acquisition grid, so the monthly means can come back on
+  # slightly different extents, which rast() cannot combine. Align them to the largest one (nothing is cropped).
+  # The layer names (ndvi_mean_YYYYMM) are kept, also when some months had no data.
   if (length(raster_list) > 1) {
-    ref_idx <- which.max(vapply(raster_list, terra::ncell, numeric(1)))
-    ref     <- raster_list[[ref_idx]]
-    for (j in seq_along(raster_list)) {
-      if (!terra::compareGeom(ref, raster_list[[j]],
-                              stopOnError = FALSE, messages = FALSE)) {
-        raster_list[[j]] <- terra::resample(raster_list[[j]], ref, method = "bilinear")
-      }
-    }
+    ref <- raster_list[[which.max(vapply(raster_list, terra::ncell, numeric(1)))]]
+    raster_list <- lapply(raster_list, function(r) {
+      if (terra::compareGeom(ref, r, stopOnError = FALSE, messages = FALSE)) r
+      else terra::resample(r, ref, method = "bilinear")
+    })
   }
-  
-  # stack monthly means (now guaranteed to share geometry)
-  r_stack <- terra::rast(raster_list)
-  return(r_stack)
+
+  terra::rast(raster_list)
 }

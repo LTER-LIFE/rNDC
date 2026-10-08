@@ -71,18 +71,24 @@ test_that("get_meteo_for_long_period reports each chunk, and can be stopped betw
   expect_equal(calls, 1)
 })
 
-# a fake download.file that writes a small GeoTIFF, as the WCS of GroenMonitor would
+# an error as raised by gm_get() for a failed request
+http_error <- function(status) {
+  structure(class = c("rNDC_http_error", "error", "condition"),
+            list(message = paste("GroenMonitor request failed (HTTP", status, ")"), call = NULL, status = status))
+}
+
+# a fake gm_get that writes a small GeoTIFF, as the WCS of GroenMonitor would; the days in `missing` have no coverage
 fake_ndvi_download <- function(missing = character(0)) {
-  function(url, destfile, ...) {
-    if (any(vapply(missing, grepl, NA, x = url, fixed = TRUE))) stop("not available")
+  function(url, option, params, out_path, overwrite = TRUE) {
+    if (any(vapply(missing, grepl, NA, x = url, fixed = TRUE))) stop(http_error(404))
     terra::writeRaster(terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 1, ymin = 0, ymax = 1, vals = c(0.2, 0.4, 0.6, 0.8)),
-                       destfile, overwrite = TRUE)
-    0L
+                       out_path, overwrite = TRUE)
+    invisible(NULL)
   }
 }
 
 test_that("the NDVI downloads report each day, and a stop removes the files", {
-  testthat::local_mocked_bindings(download.file = fake_ndvi_download())
+  testthat::local_mocked_bindings(gm_get = fake_ndvi_download())
   poly <- square_4326(0.1, 0.1, 0.9, 0.9)
   seen <- list()
   r <- suppressMessages(ndc_with_progress(
@@ -109,7 +115,7 @@ test_that("the NDVI downloads report each day, and a stop removes the files", {
 })
 
 test_that("the NDVI stack counts the days of all months, and cleans up when stopped", {
-  testthat::local_mocked_bindings(download.file = fake_ndvi_download())
+  testthat::local_mocked_bindings(gm_get = fake_ndvi_download())
   poly <- square_4326(0.1, 0.1, 0.9, 0.9)
   seen <- list()
   r <- suppressMessages(ndc_with_progress(
@@ -128,4 +134,40 @@ test_that("the NDVI stack counts the days of all months, and cleans up when stop
     class = "rNDC_interrupted"
   )
   expect_identical(list.files(tempdir(), "^ndvi_temp_"), before)
+})
+
+test_that("days without coverage are skipped, other failures are raised", {
+  poly <- square_4326(0.1, 0.1, 0.9, 0.9)
+
+  # 404 (no coverage) for some days: averaged over the others
+  testthat::local_mocked_bindings(gm_get = fake_ndvi_download(missing = c("_20240201", "_20240202")))
+  r <- suppressMessages(download_avg_ndvi_month(poly, 2024, 2))
+  expect_equal(names(r), "ndvi_mean_202402")
+
+  # no coverage at all: NULL
+  testthat::local_mocked_bindings(gm_get = function(...) stop(http_error(404)))
+  expect_null(suppressMessages(download_avg_ndvi_month(poly, 2024, 2)))
+
+  # a client error (e.g. 400) is not "no data"
+  testthat::local_mocked_bindings(gm_get = function(...) stop(http_error(400)))
+  expect_error(suppressMessages(download_avg_ndvi_month(poly, 2024, 2)), "HTTP 400")
+})
+
+test_that("gm_download_day retries server failures and then raises them", {
+  dir <- withr::local_tempdir()
+  bbox <- c(xmin = "0", xmax = "1", ymin = "0", ymax = "1")
+  calls <- 0
+  testthat::local_mocked_bindings(gm_get = function(url, out_path, ...) {
+    calls <<- calls + 1
+    if (calls < 3) stop(http_error(503))
+    file.create(out_path)
+  })
+  path <- gm_download_day(as.Date("2024-02-01"), bbox, dir, pause = 0)
+  expect_match(path, "ndvi_20240201.tif$")
+  expect_equal(calls, 3)
+
+  calls <- 0
+  testthat::local_mocked_bindings(gm_get = function(...) { calls <<- calls + 1; stop(http_error(500)) })
+  expect_error(gm_download_day(as.Date("2024-02-01"), bbox, dir, retries = 1, pause = 0), "HTTP 500")
+  expect_equal(calls, 2)
 })
