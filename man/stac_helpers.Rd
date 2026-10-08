@@ -6,6 +6,7 @@
 \alias{stac_keywords_to_vec}
 \alias{stac_feature_meta}
 \alias{stac_collect_metadata}
+\alias{stac_year_trange}
 \alias{stac_bbox_in_crs}
 \alias{stac_wcs_subset_suffix}
 \alias{stac_download_one}
@@ -26,8 +27,11 @@ stac_collect_metadata(
   endpoint,
   collection,
   asset_name = "wcs",
-  limit = 100
+  limit = 100,
+  trange = NULL
 )
+
+stac_year_trange(year)
 
 stac_bbox_in_crs(aoi, target_crs = 32631L)
 
@@ -63,6 +67,11 @@ stac_build_stack(clipped)
 
 \item{limit}{integer. Maximum number of STAC items per page.}
 
+\item{trange}{Date, POSIXct or character. Optional time range of the search, see \code{\link[=ndc_trange]{ndc_trange()}}.}
+
+\item{year}{integer or character. Year(s) to build a time range from; a range from the first day of the
+earliest to the last day of the latest.}
+
 \item{target_crs}{integer. EPSG code of the CRS used for WCS subsets.}
 
 \item{x_name, y_name}{character. Axis labels used in the WCS \code{subset} parameters.}
@@ -86,6 +95,7 @@ stac_build_stack(clipped)
 \value{
 Depends on the function: \code{stac_make_headers()} returns request headers;
 \code{stac_collect_metadata()} a tibble with one row per STAC item;
+\code{stac_year_trange()} a time range (see \code{\link[=ndc_trange]{ndc_trange()}}), or \code{NULL} if there is no valid year;
 \code{stac_download_one()} the path of the downloaded file;
 \code{stac_clip_raster_to_aoi()} a clipped \code{SpatRaster};
 \code{stac_build_stack()} a \code{SpatRaster} (or \code{NULL}).

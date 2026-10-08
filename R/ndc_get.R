@@ -22,6 +22,7 @@ ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL,
   
   mode <- match.arg(mode, c("items", "fetch", "tibble", "sf", "sfc", "download", "download_wcs"))
 
+  check_token(token, "NatureDataCube", "NDC_TOKEN")
   headers <- add_headers("Authorization" = paste0("Bearer ", token))
   endpoint <- stac(ndc_endpoint())
   

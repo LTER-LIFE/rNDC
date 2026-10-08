@@ -21,6 +21,30 @@ test_that("stac_collect_metadata reads items from the STAC API", {
   expect_equal(last_request_body()$collections, list("coll"))
 })
 
+test_that("stac_year_trange builds a time range from the years", {
+  expect_equal(stac_year_trange(2024), c("2024-01-01T00:00:00Z", "2024-12-31T23:59:59Z"))
+  expect_equal(stac_year_trange(c("2025", "2024")), c("2024-01-01T00:00:00Z", "2025-12-31T23:59:59Z"))
+  expect_null(stac_year_trange(NULL))
+  expect_null(stac_year_trange(NA))
+})
+
+test_that("the year is sent to the STAC API as a time range", {
+  local_stac_api(nitrogen_items())
+  aoi <- c(5, 52, 6, 53)
+  stac_collect_metadata(aoi, "t", ndc_endpoint(), "coll", trange = stac_year_trange(2024))
+  expect_equal(last_request_body()$datetime, "2024-01-01T00:00:00Z/2024-12-31T23:59:59Z")
+
+  stac_collect_metadata(aoi, "t", ndc_endpoint(), "coll")
+  expect_null(last_request_body()$datetime)
+
+  nitrogen_collect_metadata(aoi, "t", year = "2024")
+  expect_equal(last_request_body()$datetime, "2024-01-01T00:00:00Z/2024-12-31T23:59:59Z")
+  landuse_collect_metadata(aoi, "t", year = 2024)
+  expect_equal(last_request_body()$datetime, "2024-01-01T00:00:00Z/2024-12-31T23:59:59Z")
+  landuse_collect_metadata(aoi, "t")
+  expect_null(last_request_body()$datetime)
+})
+
 test_that("stac_collect_metadata returns an empty tibble when nothing matches", {
   local_stac_api(list())
   m <- stac_collect_metadata(c(5, 52, 6, 53), token = "t", endpoint = ndc_endpoint(), collection = "coll")
@@ -66,13 +90,12 @@ test_that("get_nitrogen_raster validates its input", {
   expect_error(get_nitrogen_raster(square_4326(), year = "", token = "t"), "select a year")
 })
 
-test_that("land use items are filtered by keyword and year", {
+test_that("land use items are filtered by year", {
   items <- list(stac_item("a", date = "2024-01-01", keywords = list("lgn")),
-                stac_item("b", date = "2024-01-01", keywords = list("other")),
                 stac_item("c", date = "2023-01-01", keywords = list("lgn")))
   local_stac_api(items)
   m <- landuse_collect_metadata(c(5, 52, 6, 53), "t")
-  expect_equal(m$id, c("c", "a"))
+  expect_equal(m$id, c("c", "a"))  # in date order
   expect_s3_class(m$obs_date, "Date")
 
   urls <- character()

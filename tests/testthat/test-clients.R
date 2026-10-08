@@ -213,3 +213,21 @@ test_that("assets_download_wcs downloads several assets and checks every respons
   expect_error(assets_download_wcs(items, output_dir = out), "404")
   expect_false(file.exists(file.path(out, "c.tif")))
 })
+
+test_that("an empty token is refused before any request is sent", {
+  local_stac_api()
+  withr::local_envvar(NDC_TOKEN = "", ADC_TOKEN = "")
+  expect_error(ndc_get("coll"), "NatureDataCube token is missing")
+  expect_error(ndc_get("coll", token = NA_character_), "token is missing")
+  expect_error(ndc_get("coll", token = "  "), "token is missing")
+  expect_error(ndc_datasets(), "NDC_TOKEN")
+  expect_error(ndc_count(collection = "coll"), "token is missing")
+  expect_error(adc_get(option = "Fields", params = c(page_size = "1")), "AgroDataCube token is missing")
+  expect_error(adc_get(url = "https://agrodatacube.wur.nl/api/v2/rest/fields"), "ADC_TOKEN")
+  expect_error(adc_get(), "Provide either")
+
+  # the health check needs no token
+  webmockr::stub_request("get", "https://agrodatacube.wur.nl/api/v2/rest/lifeprobe") |>
+    webmockr::to_return(status = 200, body = "{}", headers = json_header)
+  expect_no_error(adc_get(option = "Health_check", params = NULL))
+})

@@ -33,6 +33,15 @@ adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE
     request_url <- url
   }
     
+  if (is.null(request_url)) {
+    stop("Provide either `url`, or `option` and `params`.", call. = FALSE)
+  }
+
+  # The health check is the only request that needs no token
+  if (!grepl("/lifeprobe$", request_url)) {
+    check_token(token, "AgroDataCube", "ADC_TOKEN")
+  }
+
   # Compose request headers
   request_headers <- c("Accept" = "application/json;charset=utf-8",
                        "token"  = token)

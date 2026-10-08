@@ -1,5 +1,15 @@
 # Internal helpers for HTTP requests
 
+# Stop with an informative message when an API token is missing (NULL, NA or empty), instead of sending a request
+# that the server will answer with an opaque 401.
+check_token <- function(token, service, envvar) {
+  if (length(token) != 1 || is.na(token) || !nzchar(trimws(as.character(token)))) {
+    stop(sprintf("%s token is missing. Set the `%s` environment variable or pass `token`.", service, envvar),
+         call. = FALSE)
+  }
+  invisible(token)
+}
+
 # Raise an informative error for a failed httr response, including the message sent by the server
 # (JSON or OWS/XML exception reports), instead of just the status text.
 stop_for_http_error <- function(response, service) {

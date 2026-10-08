@@ -14,6 +14,7 @@ ndc_datasets <- function(roi = NULL, trange = NULL,
                          token = Sys.getenv("NDC_TOKEN"),
                          total = FALSE, matched = FALSE) {
   
+  check_token(token, "NatureDataCube", "NDC_TOKEN")
   headers <- add_headers("Authorization" = paste0("Bearer ", token))
   endpoint <- stac(ndc_endpoint())
   

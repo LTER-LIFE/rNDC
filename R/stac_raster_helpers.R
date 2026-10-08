@@ -17,6 +17,9 @@
 #' @param endpoint,collection character. STAC endpoint and collection ID.
 #' @param asset_name character. Name of the STAC asset holding the raster URL.
 #' @param limit integer. Maximum number of STAC items per page.
+#' @param trange Date, POSIXct or character. Optional time range of the search, see [ndc_trange()].
+#' @param year integer or character. Year(s) to build a time range from; a range from the first day of the
+#'   earliest to the last day of the latest.
 #' @param feat list. A STAC feature (item).
 #' @param x character. Keywords, or a text to build a file prefix from.
 #' @param target_crs integer. EPSG code of the CRS used for WCS subsets.
@@ -31,17 +34,15 @@
 #' @param clipped list of SpatRaster. Rasters to combine.
 #' @returns Depends on the function: `stac_make_headers()` returns request headers;
 #'   `stac_collect_metadata()` a tibble with one row per STAC item;
+#'   `stac_year_trange()` a time range (see [ndc_trange()]), or `NULL` if there is no valid year;
 #'   `stac_download_one()` the path of the downloaded file;
 #'   `stac_clip_raster_to_aoi()` a clipped `SpatRaster`;
 #'   `stac_build_stack()` a `SpatRaster` (or `NULL`).
 #' @name stac_helpers
 #' @export
 stac_make_headers <- function(token) {
-  token <- as.character(token)
-  token <- trimws(token)
-  if (!nzchar(token)) {
-    stop("Nature Data Cube token is missing. Set the token explicitly before retrieval.", call. = FALSE)
-  }
+  check_token(token, "NatureDataCube", "NDC_TOKEN")
+  token <- trimws(as.character(token))
   httr::add_headers("Authorization" = paste0("Bearer ", token),
                     "token" = token, "Accept" = "application/json")
 }
@@ -89,16 +90,24 @@ stac_feature_meta <- function(feat, asset_name = "wcs") {
 
 #' @rdname stac_helpers
 #' @export
-stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name = "wcs", limit = 100) {
+stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name = "wcs", limit = 100,
+                                  trange = NULL) {
   aoi_4326 <- ndc_roi(aoi)
   headers <- stac_make_headers(token)
 
-  items <- rstac::stac(endpoint) |>
+  query <- rstac::stac(endpoint) |>
     rstac::stac_search(
       collections = collection,
       intersects = aoi_4326,
       limit = limit
-    ) |>
+    )
+  if (!is.null(trange)) {
+    datetime <- ndc_trange(trange)
+    if (is.na(datetime)) stop("Invalid `trange`: provide one or two dates.", call. = FALSE)
+    query <- rstac::stac_search(query, datetime = datetime, limit = limit)
+  }
+
+  items <- query |>
     rstac::post_request(headers) |>
     rstac::items_fetch(progress = FALSE)
 
@@ -108,6 +117,15 @@ stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name =
   }
 
   dplyr::bind_rows(lapply(feats, stac_feature_meta, asset_name = asset_name))
+}
+
+#' @rdname stac_helpers
+#' @export
+stac_year_trange <- function(year) {
+  year <- suppressWarnings(as.integer(as.character(unlist(year))))
+  year <- year[!is.na(year)]
+  if (length(year) == 0) return(NULL)
+  c(sprintf("%04d-01-01T00:00:00Z", min(year)), sprintf("%04d-12-31T23:59:59Z", max(year)))
 }
 
 #' @rdname stac_helpers

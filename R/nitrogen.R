@@ -39,7 +39,8 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
       endpoint = endpoint,
       collection = col,
       asset_name = nitrogen_asset_name,
-      limit = limit
+      limit = limit,
+      trange = stac_year_trange(year)
     )
   }))
 

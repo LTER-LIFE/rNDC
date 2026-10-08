@@ -3,7 +3,6 @@
 
 landuse_collection <- "lgn"
 landuse_asset_name <- "wcs"
-landuse_keyword <- "lgn"
 landuse_default_year <- 2024L
 landuse_subset_crs <- 32631L
 landuse_min_file_size <- 100000L
@@ -17,14 +16,16 @@ landuse_normalize_year <- function(year) {
 landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
                                      endpoint = ndc_endpoint(),
                                      collection = landuse_collection,
-                                     limit = 100) {
+                                     limit = 100,
+                                     year = NULL) {
   meta <- stac_collect_metadata(
     aoi = aoi,
     token = token,
     endpoint = endpoint,
     collection = collection,
     asset_name = landuse_asset_name,
-    limit = limit
+    limit = limit,
+    trange = stac_year_trange(year)
   )
 
   if (nrow(meta) == 0) {
@@ -32,17 +33,6 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
   }
 
   meta$obs_date <- suppressWarnings(as.Date(meta$observation_date))
-  meta$layer_lower <- tolower(meta$layer %||% "")
-  meta$title_lower <- tolower(meta$title %||% "")
-  meta$keyword_match <- vapply(
-    meta$keywords,
-    function(k) landuse_keyword %in% k || any(grepl(landuse_keyword, k, fixed = TRUE)),
-    logical(1)
-  )
-  meta$layer_match <- grepl(landuse_keyword, meta$layer_lower, fixed = TRUE)
-  meta$title_match <- grepl(landuse_keyword, meta$title_lower, fixed = TRUE)
-
-  meta <- meta[meta$keyword_match | meta$layer_match | meta$title_match, , drop = FALSE]
   meta <- meta[!is.na(meta$href) & nzchar(meta$href), , drop = FALSE]
   meta <- meta[!duplicated(meta$href), , drop = FALSE]
   meta[order(meta$obs_date, meta$title, meta$id), , drop = FALSE]
@@ -82,11 +72,12 @@ get_landuse_raster <- function(aoi,
     token = token,
     endpoint = endpoint,
     collection = collection,
-    limit = limit
+    limit = limit,
+    year = year
   )
 
   if (nrow(meta) == 0) {
-    stop("No Land Use raster items were found for the selected AOI.", call. = FALSE)
+    stop(paste0("No Land Use raster items were found for the selected AOI and year ", year, "."), call. = FALSE)
   }
 
   meta <- meta[!is.na(meta$obs_date) & lubridate::year(meta$obs_date) == year, , drop = FALSE]
