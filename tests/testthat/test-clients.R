@@ -121,6 +121,12 @@ test_that("get_closest_meteostation picks the nearest station", {
   res <- get_closest_meteostation(poly, token = "t")
   expect_equal(res$closest_id, "2")
   expect_length(res$distances, 2)
+
+  # the study area can be anything that ndc_roi() accepts, in any CRS
+  area <- sf::st_transform(sf::st_as_sf(sf::st_as_sfc(poly, crs = 4326)), 28992)
+  expect_equal(get_closest_meteostation(area, token = "t")$closest_id, "2")
+  expect_equal(get_closest_meteostation(c(6.4, 53.1, 6.6, 53.3), token = "t")$closest_id, "2")
+  expect_error(get_closest_meteostation("not a polygon", token = "t"), "Invalid WKT")
 })
 
 meteo_url <- function(from, to) {

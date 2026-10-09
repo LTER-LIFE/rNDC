@@ -34,6 +34,8 @@
   are retried twice and then raised with the message of the server, where they used to be mistaken for a day
   without data and left out of the average. The messages for each day are replaced by the progress reports. A
   month without any valid NDVI is left out of the stack.
+* `get_closest_meteostation()` takes the study area in any form that `ndc_roi()` accepts (an `sf` object in any CRS, a bounding box, a file), as well as a WKT string.
+* `get_meteo_for_long_period()` prints its progress on the console only when nobody follows it through `ndc_with_progress()` (it used to do both).
 * Errors of the services are of class `rNDC_http_error`, with the HTTP `status`.
 * `stac_keywords_to_vec()`, `stac_feature_meta()`, `stac_bbox_in_crs()`, `stac_make_file_prefix()` and
   `stac_build_stack()` are no longer exported; they are internal helpers of the raster functions.

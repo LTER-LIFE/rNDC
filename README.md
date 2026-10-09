@@ -27,7 +27,7 @@ API tokens are read from environment variables (or can be passed through the `to
 | `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `get_landuse_raster`, `get_nitrogen_raster`, `get_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
 | `ADC_TOKEN` | `adc_get`, `adc_get_all` (and the meteo functions built on them, which take `token` explicitly) |
 
-For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`.
+For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`. A missing or empty token stops the function at once, naming the variable to set.
 
 The STAC endpoint defaults to the NatureDataCube test server. To use another one, set `options(rNDC.endpoint = "https://.../api/")` (see [`ndc_endpoint`](R/ndc_endpoint.R)).
 
@@ -36,9 +36,9 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 ### Via the *NatureDataCube* STAC API (see [`01_getting_started.ipynb`](examples/01_getting_started.ipynb) and [`stac_with_rstac.ipynb`](examples/advanced/stac_with_rstac.ipynb))
 
 - [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first)
-- [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters) in NatureDataCube.
+- [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters, or limited to some `collections`) in NatureDataCube.
 - [`ndc_count`](R/ndc_count.R): Obtain a number of items available in NatureDataCube datasets (optionally constrained by query parameters).
-- [`ndc_roi`](R/ndc_roi.R): Import and transform spatial region of interest.
+- [`ndc_roi`](R/ndc_roi.R): Import and transform spatial region of interest (for a file with several layers, such as the bundled study sites, choose one with `layer`).
 - [`ndc_trange`](R/ndc_trange.R): Convert one or more dates to the RFC 3339 format.
 - [`assets_download_wcs`](R/assets_download_wcs.R): Workaround for downloading STAC Assets coming from WCS servers.
 - [`ndc_sites`](R/ndc_sites.R): List the bundled LTER-LIFE study sites, or load the boundaries of one of them.
@@ -49,7 +49,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 - [`get_nitrogen_raster`](R/nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
 - [`ndc_landuse_years`, `ndc_nitrogen_years`, `ndc_landuse_default_year`, `ndc_nitrogen_layers`, `ndc_landuse_collection`](R/ndc_defaults.R): The years for which these rasters exist (read from the STAC API), and their defaults.
 - [`get_ndvi_stats`](R/ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
-- `stac_*` helpers ([`stac_raster_helpers.R`](R/stac_raster_helpers.R)): Shared building blocks for the functions above.
+- `stac_*` helpers ([`stac_raster_helpers.R`](R/stac_raster_helpers.R)): Shared building blocks for the functions above (`stac_collect_metadata`, `stac_year_trange`, `stac_wcs_subset_suffix`, `stac_download_one`, `stac_clip_raster_to_aoi`, `stac_make_headers`).
 
 ### Via the *AgroDataCube* REST API (see [`agrodatacube_rest.ipynb`](examples/advanced/agrodatacube_rest.ipynb))
 
@@ -73,10 +73,13 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 The Jupyter notebooks in [`examples/`](examples) show each interface in use, starting with [`01_getting_started`](examples/01_getting_started.ipynb); see the [examples README](examples/README.md) for an overview. They need network access and the `NDC_TOKEN` and `ADC_TOKEN` environment variables.
 
-### To be implemented
+### ToDo
 
-- Add (advanced) STAC filtering (e.g. post-fetching filtering, CQL2);
-- Add a way to easily list available date ranges within items matched with search parameters;
-- Add functions for post-processing (e.g. cropping acquired gridded data to RoI);
+- Migrate to `httr2`;
+- Generate a vignette or pkgdown site;
 - Harmonize functionality across the different data sources, and also towards using the returned data within Digital Twins platforms (e.g. *NaaVRE*);
 - Generally improve all functions.
+
+## Citation
+
+See [CITATION.cff](CITATION.cff)

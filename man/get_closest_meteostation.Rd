@@ -13,7 +13,7 @@ get_closest_meteostation(
 )
 }
 \arguments{
-\item{polygon_wkt}{character. WKT string (EPSG:4326) of the study area; its centroid is used.}
+\item{polygon_wkt}{The study area, whose centroid is used: either a WKT string (EPSG:4326), or anything that \code{\link[=ndc_roi]{ndc_roi()}} accepts (an sf/sfc object in any CRS, a bounding box, or a path to a file). Several geometries are combined into one.}
 
 \item{token}{character. \emph{AgroDataCube} API token.}
 

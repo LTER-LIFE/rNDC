@@ -2,7 +2,7 @@
 #'
 #' Find the _AgroDataCube_ meteorological station closest to the centroid of a study area.
 #'
-#' @param polygon_wkt character. WKT string (EPSG:4326) of the study area; its centroid is used.
+#' @param polygon_wkt The study area, whose centroid is used: either a WKT string (EPSG:4326), or anything that [ndc_roi()] accepts (an sf/sfc object in any CRS, a bounding box, or a path to a file). Several geometries are combined into one.
 #' @param token character. _AgroDataCube_ API token.
 #' @param page_size,page_offset integer. Paging of the stations list. The default `page_size` is the maximum allowed by the API, which is more than the number of stations.
 #' @param output_epsg character. EPSG code of the returned geometries.
@@ -13,7 +13,7 @@ get_closest_meteostation <- function(polygon_wkt,
                                      page_size = 10000,
                                      page_offset = 0,
                                      output_epsg = "4326") {
-  stopifnot(is.character(polygon_wkt), nzchar(polygon_wkt))
+  stopifnot(!is.null(polygon_wkt), !(is.character(polygon_wkt) && !all(nzchar(polygon_wkt))))
   
   # Get the stations (a single request: the API limits `page_size` to 10000, far more than the number of stations)
   myurl <- adc_url(option = "Meteo_stations",
@@ -34,8 +34,12 @@ get_closest_meteostation <- function(polygon_wkt,
                           error = function(e) stop("Failed to parse stations geojson: ", e$message))
   
   # Compute centroid of input polygon_wkt
-  poly_sfc <- tryCatch(st_as_sfc(polygon_wkt, crs = 4326),
-                       error = function(e) stop("Invalid WKT polygon: ", e$message))
+  if (is.character(polygon_wkt) && length(polygon_wkt) == 1 && !file.exists(polygon_wkt)) {
+    poly_sfc <- tryCatch(st_as_sfc(polygon_wkt, crs = 4326),
+                         error = function(e) stop("Invalid WKT polygon: ", e$message))
+  } else {
+    poly_sfc <- ndc_roi(polygon_wkt)
+  }
   poly_centroid <- st_centroid(poly_sfc)
   
   # Distances

@@ -31,7 +31,8 @@ get_meteo_for_long_period <- function(meteostation,
       i,
       nrow(ranges)
     )
-    message(msg)
+    # without a progress function (see ndc_with_progress()) say where the download is on the console
+    if (!is.function(getOption("rNDC.progress"))) message(msg)
     ndc_progress(msg, i, nrow(ranges))
     
     res <- get_meteo_for_period(

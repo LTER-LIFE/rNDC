@@ -59,6 +59,16 @@ test_that("get_meteo_for_long_period reports each chunk, and can be stopped betw
   expect_equal(vapply(seen, `[[`, 1L, 3), rep(3L, 3))
   expect_equal(seen[[1]][[1]], "Downloading 2024-01-01 -> 2024-01-07 (1/3)")
 
+  # the console only gets the messages when nobody follows the progress
+  expect_no_message(ndc_with_progress(
+    get_meteo_for_long_period(310, "2024-01-01", "2024-01-20", token = "t", by_days = 7),
+    report = function(...) NULL
+  ))
+  expect_message(
+    get_meteo_for_long_period(310, "2024-01-01", "2024-01-20", token = "t", by_days = 7),
+    "Downloading 2024-01-01 -> 2024-01-07 (1/3)", fixed = TRUE
+  )
+
   calls <- 0
   stopped <- tryCatch(
     suppressMessages(ndc_with_progress(
