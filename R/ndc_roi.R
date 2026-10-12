@@ -78,5 +78,3 @@ roi_read_file <- function(path, layer = NULL) {
   }
   st_read(path, layer = layer, quiet = TRUE)
 }
-
-# TODO: Add the possibility to input one of several special character values for pre-defined RoIs
