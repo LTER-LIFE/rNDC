@@ -131,3 +131,11 @@ with_adc_stubs <- function(env = parent.frame()) {
   withr::defer({ webmockr::stub_registry_clear(); webmockr::disable(adapter = "httr", quiet = TRUE) },
                envir = env)
 }
+
+# a STAC item of the collection `collection`, with the datetime `date`
+in_collection <- function(collection, date = "2024-01-01", id = paste0(collection, date)) {
+  item <- stac_item(id)
+  item$collection <- collection
+  item$properties$datetime <- paste0(date, "T00:00:00Z")
+  item
+}

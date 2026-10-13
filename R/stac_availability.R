@@ -9,20 +9,23 @@
 #' a row without a year.
 #'
 #' @param collections character. IDs of the collections.
-#' @param roi character, numeric or sf. Region of interest, see [ndc_roi()].
+#' @param roi character, numeric or sf. Region of interest, see [ndc_roi()]. `NULL` for no restriction of the area.
 #' @param token character. API token.
 #' @param limit integer. Maximum number of items that the search returns.
+#' @param trange Date, POSIXct or character. Optional period, see [ndc_trange()]: only the items in it count.
 #' @returns A data frame with the columns `collection`, `year` (of the datetime of the items; `NA` for a collection that
 #'   was asked separately) and `n_items` (the number of items; for a collection that was asked separately the number
 #'   matched, or `NA` if that request failed). Collections without items have no row. An error if the search fails.
+#'   The attribute `complete` tells whether the search returned all the items that match: if not (`FALSE`), the
+#'   `n_items` of the rows with a `year` are the items on the first page only, and so a lower bound.
 #' @examples
 #' \dontrun{
 #' stac_availability(c("lgn", "ntot", "nox", "nh3"), roi = c(5.74, 52.05, 5.76, 52.07))
 #' }
 #' @export
-stac_availability <- function(collections, roi, token = Sys.getenv("NDC_TOKEN"), limit = 500L) {
+stac_availability <- function(collections, roi = NULL, token = Sys.getenv("NDC_TOKEN"), limit = 500L, trange = NULL) {
   collections <- unique(as.character(collections))
-  items <- ndc_get(collection = collections, roi = roi, limit = limit, token = token, mode = "items")
+  items <- ndc_get(collection = collections, roi = roi, trange = trange, limit = limit, token = token, mode = "items")
 
   text <- function(x) if (is.null(x)) NA_character_ else as.character(x)[1]
   features <- items$features
@@ -39,7 +42,7 @@ stac_availability <- function(collections, roi, token = Sys.getenv("NDC_TOKEN"),
   matched <- items$numberMatched
   if (!is.null(matched) && matched > length(features)) {
     for (missing in setdiff(collections, found$collection)) {
-      n <- tryCatch(as.numeric(ndc_count(collection = missing, roi = roi, token = token)), error = function(e) NA_real_)
+      n <- tryCatch(as.numeric(ndc_count(collection = missing, roi = roi, trange = trange, limit = 1, token = token)), error = function(e) NA_real_)
       if (is.na(n) || n > 0) {
         found <- rbind(found, data.frame(collection = missing, year = NA_character_, n_items = n,
                                          stringsAsFactors = FALSE))
@@ -48,5 +51,6 @@ stac_availability <- function(collections, roi, token = Sys.getenv("NDC_TOKEN"),
   }
   found <- found[order(found$collection, found$year), , drop = FALSE]
   rownames(found) <- NULL
+  attr(found, "complete") <- is.null(matched) || matched <= length(features)
   found
 }

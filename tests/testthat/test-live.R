@@ -23,6 +23,22 @@ test_that("the collections publish the metadata that ndc_metadata() and ndc_cita
   expect_match(ndc_citation("lgn", metadata = m)[["lgn"]], "doi.org/10", fixed = FALSE)
 })
 
+test_that("ndc_available lists the datasets for an area and period, and the external coverage holds", {
+  skip_unless_live()
+  here <- c(5.74, 52.05, 5.76, 52.07)
+  a <- ndc_available(here, trange = c("2024-06-01", "2024-06-30"))
+  expect_true(all(a$available[a$id %in% c("ndvi", "rgb")]))       # daily rasters in June 2024
+  expect_false(a$available[a$id == "lgn"])                         # lgn is a 2024 item dated 1 January
+  expect_true(all(a$available[a$source != "NatureDataCube"]))
+  expect_false(any(ndc_available(c(-30, 40, -29, 41))$available))
+
+  # the coverage that ndc_external_datasets() states: the first day of the NDVI rasters
+  ndvi <- ndc_external_datasets()
+  first <- ndc_count(collection = "ndvi", trange = c(NA, format(ndvi$start[ndvi$id == "groenmonitor-ndvi"] - 1)))
+  expect_equal(as.numeric(first), 0)
+  expect_gt(as.numeric(ndc_count(collection = "ndvi", trange = c(format(ndvi$start[ndvi$id == "groenmonitor-ndvi"]), NA))), 0)
+})
+
 test_that("one search tells which raster collections have items for an area", {
   skip_unless_live()
   here <- c(5.74, 52.05, 5.76, 52.07)

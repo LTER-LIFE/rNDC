@@ -1,13 +1,5 @@
 # Which collections have items for an area (stac_availability()).
 
-# a STAC item of the collection `collection`, with the datetime `date`
-in_collection <- function(collection, date = "2024-01-01", id = paste0(collection, date)) {
-  item <- stac_item(id)
-  item$collection <- collection
-  item$properties$datetime <- paste0(date, "T00:00:00Z")
-  item
-}
-
 roi <- c(5.74, 52.05, 5.76, 52.07)
 
 test_that("all collections are asked in one search, and the items are counted per collection and year", {

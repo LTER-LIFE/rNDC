@@ -2,6 +2,9 @@
 
 ## New
 
+* `ndc_available()` lists the datasets that have data for a region of interest and/or a period: the collections of the NatureDataCube, checked against their items (with one search, and exact counts), and the datasets that rNDC retrieves from the AgroDataCube and GroenMonitor, for which the known coverage is used (`verified = FALSE`). The extents that the collections publish are not used to leave collections out: they are out of date for some (`ndvi-snl` has items after the end of its extent).
+* `ndc_external_datasets()` describes those datasets and the coverage that is known for them (the first dates: Weather 1970-01-01, Agricultural fields 2009, NDVI rasters 2017-05-26; the Netherlands), and `ndc_netherlands()` returns the bundled outline of the country.
+* `stac_availability()` takes a period (`trange`), needs no area, counts the collections that did not show with a request for one item, and tells with the attribute `complete` whether its counts are exact.
 * `ndc_metadata()` reads the metadata that the NatureDataCube publishes for its datasets (STAC collections) into a tibble: title, description, license, keywords, providers, spatial and temporal extent, and the fields of the STAC extensions, such as `sci:citation`, `sci:doi` and `sci:publications` of the Scientific extension. Fields of other extensions get a list-column each, found in the data. `ndc_citation()` writes the reference of a dataset from it (citation, DOI link and license).
 * `stac_availability()` tells which collections have items that intersect an area, and for which years, with one search over all of them (instead of counting the items of each collection). It was written for the Shiny app rNDC.Shiny, to mark the datasets that have data for the selected area.
 

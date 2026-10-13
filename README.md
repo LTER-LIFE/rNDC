@@ -38,6 +38,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 - [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first)
 - [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters, or limited to some `collections`) in NatureDataCube.
 - [`ndc_metadata`](R/ndc_metadata.R), `ndc_citation`: Read the metadata of the datasets (title, license, extent, providers, and the fields of STAC extensions such as the citation and DOI of the Scientific extension), and write the reference of a dataset from it.
+- [`ndc_available`](R/ndc_available.R): List the datasets that have data for an area and/or a period: the STAC collections (checked against their items) and the datasets of other services ([`ndc_external_datasets`](R/ndc_external.R), with the coverage that is known for them; [`ndc_netherlands`](R/ndc_external.R) is the outline of the country).
 - [`stac_availability`](R/stac_availability.R): Which collections have items for an area, and for which years, with one search over all of them (e.g. "is there land use or nitrogen data here?").
 - [`ndc_count`](R/ndc_count.R): Obtain a number of items available in NatureDataCube datasets (optionally constrained by query parameters).
 - [`ndc_roi`](R/ndc_roi.R): Import and transform spatial region of interest (for a file with several layers, such as the bundled study sites, choose one with `layer`).

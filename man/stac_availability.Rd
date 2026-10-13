@@ -6,24 +6,29 @@
 \usage{
 stac_availability(
   collections,
-  roi,
+  roi = NULL,
   token = Sys.getenv("NDC_TOKEN"),
-  limit = 500L
+  limit = 500L,
+  trange = NULL
 )
 }
 \arguments{
 \item{collections}{character. IDs of the collections.}
 
-\item{roi}{character, numeric or sf. Region of interest, see \code{\link[=ndc_roi]{ndc_roi()}}.}
+\item{roi}{character, numeric or sf. Region of interest, see \code{\link[=ndc_roi]{ndc_roi()}}. \code{NULL} for no restriction of the area.}
 
 \item{token}{character. API token.}
 
 \item{limit}{integer. Maximum number of items that the search returns.}
+
+\item{trange}{Date, POSIXct or character. Optional period, see \code{\link[=ndc_trange]{ndc_trange()}}: only the items in it count.}
 }
 \value{
 A data frame with the columns \code{collection}, \code{year} (of the datetime of the items; \code{NA} for a collection that
 was asked separately) and \code{n_items} (the number of items; for a collection that was asked separately the number
 matched, or \code{NA} if that request failed). Collections without items have no row. An error if the search fails.
+The attribute \code{complete} tells whether the search returned all the items that match: if not (\code{FALSE}), the
+\code{n_items} of the rows with a \code{year} are the items on the first page only, and so a lower bound.
 }
 \description{
 Find out which of some STAC collections have items that intersect a region of interest, and for which years, with
