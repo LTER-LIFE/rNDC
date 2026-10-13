@@ -13,6 +13,15 @@ test_that("the collections used by the package exist", {
   expect_true(all(c("lgn", "ntot", "nox", "nh3", "ndvi") %in% ndc_datasets()))
 })
 
+test_that("one search tells which raster collections have items for an area", {
+  skip_unless_live()
+  here <- c(5.74, 52.05, 5.76, 52.07)
+  table <- stac_availability(c("lgn", "ntot", "nox", "nh3"), here)
+  expect_setequal(table$collection, c("lgn", "ntot", "nox", "nh3"))
+  expect_true("2024" %in% table$year)
+  expect_equal(nrow(stac_availability(c("lgn", "ntot"), c(-0.2, 51.4, -0.1, 51.5))), 0)  # London
+})
+
 test_that("land use and nitrogen items exist for the study sites", {
   skip_unless_live()
   site <- ndc_sites("loobos")

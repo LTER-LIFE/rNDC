@@ -5,8 +5,8 @@ title: "rNDC: R interface to LTER-LIFE's NatureDataCube"
 abstract: >-
   A set of functions and wrappers to facilitate finding and getting data from
   LTER-LIFE's NatureDataCube.
-version: "0.5.1"
-date-released: 2026-10-12
+version: "0.5.2"
+date-released: 2026-10-13
 license: Apache-2.0
 repository-code: "https://github.com/LTER-LIFE/rNDC"
 url: "https://github.com/LTER-LIFE/rNDC"

@@ -1,3 +1,9 @@
+# rNDC (development version)
+
+## New
+
+* `stac_availability()` tells which collections have items that intersect an area, and for which years, with one search over all of them (instead of counting the items of each collection). It was written for the Shiny app rNDC.Shiny, to mark the datasets that have data for the selected area.
+
 # rNDC 0.5.1
 
 ## New

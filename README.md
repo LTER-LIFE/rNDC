@@ -24,7 +24,7 @@ API tokens are read from environment variables (or can be passed through the `to
 
 | Variable | Used by |
 |---|---|
-| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `get_landuse_raster`, `get_nitrogen_raster`, `get_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
+| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `stac_availability`, `get_landuse_raster`, `get_nitrogen_raster`, `get_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
 | `ADC_TOKEN` | `adc_get`, `adc_get_all` (and the meteo functions built on them, which take `token` explicitly) |
 
 For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`. A missing or empty token stops the function at once, naming the variable to set.
@@ -37,6 +37,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 - [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first)
 - [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters, or limited to some `collections`) in NatureDataCube.
+- [`stac_availability`](R/stac_availability.R): Which collections have items for an area, and for which years, with one search over all of them (e.g. "is there land use or nitrogen data here?").
 - [`ndc_count`](R/ndc_count.R): Obtain a number of items available in NatureDataCube datasets (optionally constrained by query parameters).
 - [`ndc_roi`](R/ndc_roi.R): Import and transform spatial region of interest (for a file with several layers, such as the bundled study sites, choose one with `layer`).
 - [`ndc_trange`](R/ndc_trange.R): Convert one or more dates to the RFC 3339 format.
