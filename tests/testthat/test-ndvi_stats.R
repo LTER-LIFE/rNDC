@@ -1,16 +1,5 @@
 # Monthly NDVI statistics from the STAC NDVI collections.
 
-ndvi_items <- function() {
-  list(ndvi_item("a", "1", "2024-05-01", 0.5, 0.1), ndvi_item("b", "1", "2024-05-14", 0.7, 0.3),
-       ndvi_item("c", "1", "2024-06-02", 0.8, 0.2),
-       ndvi_item("d", "2", "2024-05-02", 0.9, 0.5))  # a neighbouring polygon
-}
-
-square <- function(...) {
-  sf::st_sf(..., geometry = sf::st_as_sfc(sf::st_bbox(c(xmin = 0.1, ymin = 0.1, xmax = 0.9, ymax = 0.9),
-                                                       crs = sf::st_crs(4326))))
-}
-
 test_that("NDVI statistics are averaged per month for the polygon of the area only", {
   local_stac_api(items = ndvi_items())
   res <- get_ndvi_stats(square(ndc_id = "1"), "ndvi-lter", from = "2024-05-01", to = "2024-06-30", token = "t")

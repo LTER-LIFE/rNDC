@@ -13,11 +13,15 @@
 get_meteo_for_long_period <- function(meteostation,
                                       fromdate,
                                       todate,
-                                      token,
+                                      token = Sys.getenv("ADC_TOKEN"),
                                       by_days = 7,
                                       page_size = 500,
                                       output_epsg = "4326",
-                                      sleep_sec = 0) {
+                                      sleep_sec = 0,
+                                      params_file = NULL,
+                                      save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_meteo_for_long_period", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_meteo_for_long_period", save_params)
   
   ranges <- split_date_range(fromdate, todate, by_days)
   results <- list()

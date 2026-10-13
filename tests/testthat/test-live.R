@@ -39,6 +39,18 @@ test_that("ndc_available lists the datasets for an area and period, and the exte
   expect_gt(as.numeric(ndc_count(collection = "ndvi", trange = c(format(ndvi$start[ndvi$id == "groenmonitor-ndvi"]), NA))), 0)
 })
 
+test_that("a search saved to a file is repeated from it", {
+  skip_unless_live()
+  f <- withr::local_tempfile(fileext = ".json")
+  here <- c(5.74, 52.05, 5.76, 52.07)
+  first <- ndc_get("ndvi", roi = here, trange = c("2024-06-01", "2024-06-30"), mode = "tibble", all_pages = TRUE, save_params = f)
+  again <- ndc_get(params_file = f)
+  expect_gt(nrow(first), 0)
+  expect_equal(again$title, first$title)
+  expect_equal(jsonlite::fromJSON(f)$matched, nrow(first))
+  expect_false(grepl(Sys.getenv("NDC_TOKEN"), paste(readLines(f), collapse = ""), fixed = TRUE))
+})
+
 test_that("one search tells which raster collections have items for an area", {
   skip_unless_live()
   here <- c(5.74, 52.05, 5.76, 52.07)

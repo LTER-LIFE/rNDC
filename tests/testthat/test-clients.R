@@ -105,11 +105,6 @@ test_that("adc_get rejects unknown servers", {
   expect_error(adc_get(option = "Fields", params = c(a = "1"), server = "zzz"), "Unknown `server`")
 })
 
-station_feature <- function(id, x, y) {
-  list(type = "Feature", geometry = list(type = "Point", coordinates = c(x, y)),
-       properties = list(meteostationid = id))
-}
-
 test_that("get_closest_meteostation picks the nearest station", {
   with_adc_stubs()
   webmockr::stub_request("get", uri_regex = "agrodatacube.wur.nl/api/v2/rest/meteostations") |>
@@ -128,11 +123,6 @@ test_that("get_closest_meteostation picks the nearest station", {
   expect_equal(get_closest_meteostation(c(6.4, 53.1, 6.6, 53.3), token = "t")$closest_id, "2")
   expect_error(get_closest_meteostation("not a polygon", token = "t"), "Invalid WKT")
 })
-
-meteo_url <- function(from, to) {
-  paste0("https://agrodatacube.wur.nl/api/v2/rest/meteodata?output_epsg=4326&meteostation=260",
-         "&fromdate=", from, "&todate=", to, "&page_size=500&page_offset=0")
-}
 
 test_that("meteo functions fetch data, warn on empty results and surface HTTP errors", {
   with_adc_stubs()

@@ -50,6 +50,7 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
 #' @param subset_crs,min_file_size Internal retrieval parameters.
+#' @inheritParams ndc_get
 #' @return A list with `rasters` (a named list of clipped `SpatRaster`s), `stack` (a `SpatRaster` with one layer
 #'   per raster), `files` (the paths of the downloaded files) and `metadata` (a tibble with one row per STAC
 #'   item). An error is raised if no item matches the area and year.
@@ -64,7 +65,11 @@ get_landuse_raster <- function(aoi,
                                limit = 100,
                                file_prefix = NULL,
                                subset_crs = landuse_subset_crs,
-                               min_file_size = landuse_min_file_size) {
+                               min_file_size = landuse_min_file_size,
+                               params_file = NULL,
+                               save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_landuse_raster", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_landuse_raster", save_params)
   year <- landuse_normalize_year(year)
   if (is.na(year)) {
     stop("Please provide a valid year for Land Use.", call. = FALSE)

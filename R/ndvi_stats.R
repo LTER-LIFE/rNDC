@@ -16,13 +16,16 @@
 #' @param ndc_id character. Ids of the polygons to keep. By default the `ndc_id` column of `aoi`, if it has
 #'   one (otherwise all the polygons that intersect `aoi` are kept).
 #' @param token character. API token.
+#' @inheritParams ndc_get
 #' @returns A tibble with one row per polygon and month: `ndc_id`, `month` (`"YYYY-MM"`), `ndvi_mean`,
 #'   `ndvi_std` (if the collection has it) and `n_obs` (the number of observations). It has no rows if nothing
 #'   matches.
 #' @export
 
 get_ndvi_stats <- function(aoi, collection, from = NA, to = NA, ndc_id = NULL,
-                           token = Sys.getenv("NDC_TOKEN")) {
+                           token = Sys.getenv("NDC_TOKEN"), params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_ndvi_stats", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_ndvi_stats", save_params)
 
   # the whole of the last day counts: a date alone would be midnight at the start of it
   trange <- ndc_trange(c(as_datetime(from), as_datetime(to) + 86399))

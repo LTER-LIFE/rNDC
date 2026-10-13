@@ -15,7 +15,10 @@ ndc_get(
   output_dir = tempdir(),
   overwrite = TRUE,
   progress = FALSE,
-  all_pages = FALSE
+  all_pages = FALSE,
+  params_file = NULL,
+  save_params = NULL,
+  save_ids = FALSE
 )
 }
 \arguments{
@@ -40,10 +43,27 @@ ndc_get(
 \item{progress}{boolean. If \code{TRUE}, show progress bar.}
 
 \item{all_pages}{boolean. If \code{TRUE}, the modes that convert or download only the first page (\code{tibble}, \code{sf}, \code{sfc}, \code{download} and \code{download_wcs}) first retrieve all the pages of the search, as \code{mode = "fetch"} does (\code{limit} is then the size of each page). Has no effect on the modes \code{items} (first page) and \code{fetch} (all pages already).}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
+
+\item{save_ids}{boolean. If \code{TRUE}, the file of \code{save_params} also holds the ids of the items that the search returned.}
 }
 \value{
 Depends on \code{mode}: a STAC item collection (\code{items}, \code{fetch}), a tibble, an sf or sfc object (empty if nothing matches), or the result of downloading the assets.
 }
 \description{
 Search (and optionally download) data from NatureDataCube, through a custom STAC query.
+}
+\details{
+\strong{Saving and repeating a search.} With \code{save_params = "search.json"} the call writes its parameters to a file,
+and \code{ndc_get(params_file = "search.json")} makes the same search again, for example for another \code{mode}. The file has the
+\code{collection}s, the \code{roi} (as a GeoJSON geometry in EPSG:4326, whatever form it was given in), the \code{trange} (the STAC
+\code{datetime} text), \code{limit}, \code{mode}, \code{all_pages} and \code{asset_names} (when set), and the number of items matched
+(\code{matched}; \code{save_ids = TRUE} adds their ids). The token is never written, and neither are \code{output_dir} and
+\code{overwrite}. The format, and what else can be recorded this way, is described in \code{\link[=ndc_repeat]{ndc_repeat()}}.
 }

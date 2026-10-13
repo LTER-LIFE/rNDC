@@ -10,7 +10,9 @@ get_ndvi_stats(
   from = NA,
   to = NA,
   ndc_id = NULL,
-  token = Sys.getenv("NDC_TOKEN")
+  token = Sys.getenv("NDC_TOKEN"),
+  params_file = NULL,
+  save_params = NULL
 )
 }
 \arguments{
@@ -25,6 +27,13 @@ a side of the period open.}
 one (otherwise all the polygons that intersect \code{aoi} are kept).}
 
 \item{token}{character. API token.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 A tibble with one row per polygon and month: \code{ndc_id}, \code{month} (\code{"YYYY-MM"}), \code{ndvi_mean},

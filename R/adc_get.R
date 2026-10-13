@@ -10,11 +10,16 @@
 #' @param download boolean. If `TRUE`, download file.
 #' @param out_path character. Output path.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
+#' @inheritParams ndc_get
 #' @returns The parsed content of the response (a list for JSON responses). An error is raised if the request fails.
 #' @export
 
 adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE,
-                    token = Sys.getenv("ADC_TOKEN"), out_path = tempfile(), overwrite = TRUE) {
+                    token = Sys.getenv("ADC_TOKEN"), out_path = tempfile(), overwrite = TRUE,
+                    params_file = NULL, save_params = NULL) {
+
+  if (!is.null(params_file)) params_apply("adc_get", params_file)
+  if (!is.null(save_params)) params_save_when_done("adc_get", save_params)
 
   # Servers
   server_code <- tolower(server)

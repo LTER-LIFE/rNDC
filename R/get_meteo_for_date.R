@@ -4,12 +4,16 @@
 #'
 #' @param stationid character or numeric. Station identifier.
 #' @param date Date or character. A `Date`, or a `"YYYYMMDD"` / `"YYYY-MM-DD"` string.
-#' @param token character. _AgroDataCube_ API token.
+#' @param token character. _AgroDataCube_ API token (by default the environment variable `ADC_TOKEN`).
 #' @param page_size,page_offset integer. Paging of the results (`page_offset` is the page number, starting at 0).
 #' @param output_epsg character. EPSG code of the returned geometries.
+#' @inheritParams ndc_get
 #' @returns An sf object, or `NULL` (with a warning) if no data is returned.
 #' @export
-get_meteo_for_date <- function(stationid, date, token, page_size = 500, page_offset = 0, output_epsg = "4326") {
+get_meteo_for_date <- function(stationid, date, token = Sys.getenv("ADC_TOKEN"), page_size = 500, page_offset = 0,
+                              output_epsg = "4326", params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_meteo_for_date", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_meteo_for_date", save_params)
   if (inherits(date, "Date")) {
     date_str <- format(date, "%Y%m%d")
   } else {

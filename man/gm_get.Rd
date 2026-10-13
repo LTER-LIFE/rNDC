@@ -4,7 +4,15 @@
 \alias{gm_get}
 \title{Get data from \emph{GroenMonitor}}
 \usage{
-gm_get(url, option = "NDVI", params, out_path = tempfile(), overwrite = TRUE)
+gm_get(
+  url,
+  option = "NDVI",
+  params,
+  out_path = tempfile(),
+  overwrite = TRUE,
+  params_file = NULL,
+  save_params = NULL
+)
 }
 \arguments{
 \item{url}{character. Request URL.}
@@ -16,6 +24,13 @@ gm_get(url, option = "NDVI", params, out_path = tempfile(), overwrite = TRUE)
 \item{out_path}{character. Output path.}
 
 \item{overwrite}{boolean. If \code{TRUE}, overwrite file.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 The \code{httr} response. The file is written to \code{out_path}; an error is raised (and the file removed) if the request fails, e.g. when no coverage exists for the requested date.

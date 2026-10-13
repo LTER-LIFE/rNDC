@@ -6,13 +6,17 @@
 #'
 #' @param meteostation character or numeric. Station identifier.
 #' @param fromdate,todate Date or character. A `Date`, or a `"YYYYMMDD"` / `"YYYY-MM-DD"` string.
-#' @param token character. _AgroDataCube_ API token.
+#' @param token character. _AgroDataCube_ API token (by default the environment variable `ADC_TOKEN`).
 #' @param page_size,page_offset integer. Paging of the results (`page_offset` is the page number, starting at 0).
 #' @param output_epsg character. EPSG code of the returned geometries.
+#' @inheritParams ndc_get
 #' @returns An sf object, or `NULL` (with a warning) if no data is returned.
 #' @export
-get_meteo_for_period <- function(meteostation, fromdate, todate, token,
-                                 page_size = 500, page_offset = 0, output_epsg = "4326") {
+get_meteo_for_period <- function(meteostation, fromdate, todate, token = Sys.getenv("ADC_TOKEN"),
+                                 page_size = 500, page_offset = 0, output_epsg = "4326",
+                                 params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_meteo_for_period", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_meteo_for_period", save_params)
   # normalize dates
   fmt_date <- function(d) {
     if (inherits(d, "Date")) return(format(d, "%Y%m%d"))

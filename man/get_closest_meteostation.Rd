@@ -6,20 +6,29 @@
 \usage{
 get_closest_meteostation(
   polygon_wkt,
-  token,
+  token = Sys.getenv("ADC_TOKEN"),
   page_size = 10000,
   page_offset = 0,
-  output_epsg = "4326"
+  output_epsg = "4326",
+  params_file = NULL,
+  save_params = NULL
 )
 }
 \arguments{
 \item{polygon_wkt}{The study area, whose centroid is used: either a WKT string (EPSG:4326), or anything that \code{\link[=ndc_roi]{ndc_roi()}} accepts (an sf/sfc object in any CRS, a bounding box, or a path to a file). Several geometries are combined into one.}
 
-\item{token}{character. \emph{AgroDataCube} API token.}
+\item{token}{character. \emph{AgroDataCube} API token (by default the environment variable \code{ADC_TOKEN}).}
 
 \item{page_size, page_offset}{integer. Paging of the stations list. The default \code{page_size} is the maximum allowed by the API, which is more than the number of stations.}
 
 \item{output_epsg}{character. EPSG code of the returned geometries.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 A list with \code{stations_sf} (all stations), \code{closest_station} (sf row of the closest one), \code{closest_id} (its identifier) and \code{distances} (distance in metres, in EPSG:28992, from the centroid to each station).

@@ -10,7 +10,9 @@ adc_get_all(
   token = Sys.getenv("ADC_TOKEN"),
   server = "adc",
   page_size = 1000L,
-  max_pages = 100L
+  max_pages = 100L,
+  params_file = NULL,
+  save_params = NULL
 )
 }
 \arguments{
@@ -25,6 +27,13 @@ adc_get_all(
 \item{page_size}{integer. Number of features requested per page (the maximum of the API is 1000 or more).}
 
 \item{max_pages}{integer. Stop after this many pages (with a warning), as a safeguard.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 The parsed GeoJSON of the first page, with the features of all the pages.

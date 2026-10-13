@@ -15,7 +15,9 @@ get_landuse_raster(
   limit = 100,
   file_prefix = NULL,
   subset_crs = landuse_subset_crs,
-  min_file_size = landuse_min_file_size
+  min_file_size = landuse_min_file_size,
+  params_file = NULL,
+  save_params = NULL
 )
 }
 \arguments{
@@ -37,6 +39,13 @@ bounding box (\verb{xmin, ymin, xmax, ymax}, EPSG:4326) or a path to a file with
 \item{file_prefix}{Optional file prefix.}
 
 \item{subset_crs, min_file_size}{Internal retrieval parameters.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 A list with \code{rasters} (a named list of clipped \code{SpatRaster}s), \code{stack} (a \code{SpatRaster} with one layer

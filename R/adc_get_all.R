@@ -10,16 +10,20 @@
 #' @param server character. Server to connect to, see [adc_get()].
 #' @param page_size integer. Number of features requested per page (the maximum of the API is 1000 or more).
 #' @param max_pages integer. Stop after this many pages (with a warning), as a safeguard.
+#' @inheritParams ndc_get
 #' @returns The parsed GeoJSON of the first page, with the features of all the pages.
 #' @export
 
 adc_get_all <- function(option, params, token = Sys.getenv("ADC_TOKEN"), server = "adc",
-                        page_size = 1000L, max_pages = 100L) {
-  params <- c(params, page_size = format(page_size, scientific = FALSE, trim = TRUE))
+                        page_size = 1000L, max_pages = 100L, params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("adc_get_all", params_file)
+  if (!is.null(save_params)) params_save_when_done("adc_get_all", save_params)
+  # (`params` itself stays as it was given: it is what `save_params` records)
+  base_params <- c(params, page_size = format(page_size, scientific = FALSE, trim = TRUE))
   res <- NULL
 
   for (page in seq_len(max_pages) - 1L) {
-    page_params <- c(params, page_offset = format(page, scientific = FALSE, trim = TRUE))
+    page_params <- c(base_params, page_offset = format(page, scientific = FALSE, trim = TRUE))
     cur <- adc_get(option = option, params = page_params, server = server, token = token)
     if (is.null(res)) res <- cur else res$features <- c(res$features, cur$features)
     if (length(cur$features) < page_size) return(res)

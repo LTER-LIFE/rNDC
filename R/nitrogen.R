@@ -85,6 +85,7 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
 #' @param overwrite Overwrite existing files.
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
+#' @inheritParams ndc_get
 #' @return A list with `rasters` (a named list of clipped `SpatRaster`s, named `<layer>_<year>`), `stack` (a
 #'   `SpatRaster` with one layer per raster), `files` (the paths of the downloaded files) and `metadata` (a
 #'   tibble with one row per layer and year). An error is raised if no item matches.
@@ -95,7 +96,11 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
                                 out_dir = tempdir(),
                                 overwrite = TRUE,
                                 limit = 100,
-                                file_prefix = NULL) {
+                                file_prefix = NULL,
+                                params_file = NULL,
+                                save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_nitrogen_raster", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_nitrogen_raster", save_params)
   year <- nitrogen_normalize_year(year)
   layers <- nitrogen_clean_layer_name(layers)
 

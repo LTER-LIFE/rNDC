@@ -3,16 +3,21 @@
 #' Find the _AgroDataCube_ meteorological station closest to the centroid of a study area.
 #'
 #' @param polygon_wkt The study area, whose centroid is used: either a WKT string (EPSG:4326), or anything that [ndc_roi()] accepts (an sf/sfc object in any CRS, a bounding box, or a path to a file). Several geometries are combined into one.
-#' @param token character. _AgroDataCube_ API token.
+#' @param token character. _AgroDataCube_ API token (by default the environment variable `ADC_TOKEN`).
 #' @param page_size,page_offset integer. Paging of the stations list. The default `page_size` is the maximum allowed by the API, which is more than the number of stations.
 #' @param output_epsg character. EPSG code of the returned geometries.
+#' @inheritParams ndc_get
 #' @returns A list with `stations_sf` (all stations), `closest_station` (sf row of the closest one), `closest_id` (its identifier) and `distances` (distance in metres, in EPSG:28992, from the centroid to each station).
 #' @export
 get_closest_meteostation <- function(polygon_wkt,
-                                     token,
+                                     token = Sys.getenv("ADC_TOKEN"),
                                      page_size = 10000,
                                      page_offset = 0,
-                                     output_epsg = "4326") {
+                                     output_epsg = "4326",
+                                     params_file = NULL,
+                                     save_params = NULL) {
+  if (!is.null(params_file)) params_apply("get_closest_meteostation", params_file)
+  if (!is.null(save_params)) params_save_when_done("get_closest_meteostation", save_params)
   stopifnot(!is.null(polygon_wkt), !(is.character(polygon_wkt) && !all(nzchar(polygon_wkt))))
   
   # Get the stations (a single request: the API limits `page_size` to 10000, far more than the number of stations)

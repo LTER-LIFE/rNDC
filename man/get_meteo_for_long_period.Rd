@@ -8,11 +8,13 @@ get_meteo_for_long_period(
   meteostation,
   fromdate,
   todate,
-  token,
+  token = Sys.getenv("ADC_TOKEN"),
   by_days = 7,
   page_size = 500,
   output_epsg = "4326",
-  sleep_sec = 0
+  sleep_sec = 0,
+  params_file = NULL,
+  save_params = NULL
 )
 }
 \arguments{
@@ -20,7 +22,7 @@ get_meteo_for_long_period(
 
 \item{fromdate, todate}{Date or character. A \code{Date}, or a \code{"YYYYMMDD"} / \code{"YYYY-MM-DD"} string.}
 
-\item{token}{character. \emph{AgroDataCube} API token.}
+\item{token}{character. \emph{AgroDataCube} API token (by default the environment variable \code{ADC_TOKEN}).}
 
 \item{by_days}{integer. Length (in days) of each request.}
 
@@ -29,6 +31,13 @@ get_meteo_for_long_period(
 \item{output_epsg}{character. EPSG code of the returned geometries.}
 
 \item{sleep_sec}{numeric. Seconds to wait between requests.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 An sf object, or \code{NULL} (with a warning) if no data is returned.

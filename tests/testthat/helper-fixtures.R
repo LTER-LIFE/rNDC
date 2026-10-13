@@ -139,3 +139,71 @@ in_collection <- function(collection, date = "2024-01-01", id = paste0(collectio
   item$properties$datetime <- paste0(date, "T00:00:00Z")
   item
 }
+
+# ---- shared by several test files ----
+
+mock_download <- function(href, outfile, headers, overwrite = TRUE, ...) {
+  r <- terra::rast(nrows = 4, ncols = 4, xmin = 0, xmax = 1, ymin = 0, ymax = 1,
+                   crs = "EPSG:4326", vals = 1:16)
+  terra::writeRaster(r, outfile, overwrite = TRUE)
+  outfile
+}
+
+nitrogen_items <- function() {
+  list(stac_item("a", layer = "ntot", date = "2024-01-01"),
+       stac_item("b", layer = "nox", date = "2024-01-01"),
+       stac_item("c", layer = "ntot", date = "2025-01-01"))
+}
+
+# an error as raised by gm_get() for a failed request
+http_error <- function(status) {
+  structure(class = c("rNDC_http_error", "error", "condition"),
+            list(message = paste("GroenMonitor request failed (HTTP", status, ")"), call = NULL, status = status))
+}
+
+# a fake gm_get that writes a small GeoTIFF, as the WCS of GroenMonitor would; the days in `missing` have no coverage
+fake_ndvi_download <- function(missing = character(0)) {
+  function(url, option, params, out_path, overwrite = TRUE) {
+    if (any(vapply(missing, grepl, NA, x = url, fixed = TRUE))) stop(http_error(404))
+    terra::writeRaster(terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 1, ymin = 0, ymax = 1, vals = c(0.2, 0.4, 0.6, 0.8)),
+                       out_path, overwrite = TRUE)
+    invisible(NULL)
+  }
+}
+
+station_feature <- function(id, x, y) {
+  list(type = "Feature", geometry = list(type = "Point", coordinates = c(x, y)),
+       properties = list(meteostationid = id))
+}
+
+ndvi_items <- function() {
+  list(ndvi_item("a", "1", "2024-05-01", 0.5, 0.1), ndvi_item("b", "1", "2024-05-14", 0.7, 0.3),
+       ndvi_item("c", "1", "2024-06-02", 0.8, 0.2),
+       ndvi_item("d", "2", "2024-05-02", 0.9, 0.5))  # a neighbouring polygon
+}
+
+square <- function(...) {
+  sf::st_sf(..., geometry = sf::st_as_sfc(sf::st_bbox(c(xmin = 0.1, ymin = 0.1, xmax = 0.9, ymax = 0.9),
+                                                       crs = sf::st_crs(4326))))
+}
+
+# ---- files with the parameters of a retrieval (R/ndc_params.R) ----
+
+# the search body that was sent last, without the fields that do not describe the search
+sent <- function() {
+  b <- last_request_body()
+  b[c("collections", "intersects", "datetime", "limit")]
+}
+
+read_file <- function(f) jsonlite::fromJSON(f, simplifyVector = FALSE)
+
+# A file with the parameters must not hold the token nor where files go
+expect_no_secrets <- function(f) {
+  text <- paste(readLines(f), collapse = "\n")
+  testthat::expect_false(grepl("token|Bearer|out_dir|out_path|file_prefix|overwrite|SECRET", text, ignore.case = TRUE))
+}
+
+meteo_url <- function(from, to) {
+  paste0("https://agrodatacube.wur.nl/api/v2/rest/meteodata?output_epsg=4326&meteostation=260",
+         "&fromdate=", from, "&todate=", to, "&page_size=500&page_offset=0")
+}

@@ -12,7 +12,9 @@ adc_get(
   download = FALSE,
   token = Sys.getenv("ADC_TOKEN"),
   out_path = tempfile(),
-  overwrite = TRUE
+  overwrite = TRUE,
+  params_file = NULL,
+  save_params = NULL
 )
 }
 \arguments{
@@ -31,6 +33,13 @@ adc_get(
 \item{out_path}{character. Output path.}
 
 \item{overwrite}{boolean. If \code{TRUE}, overwrite file.}
+
+\item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
+call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
+give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
+
+\item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
+succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
 The parsed content of the response (a list for JSON responses). An error is raised if the request fails.

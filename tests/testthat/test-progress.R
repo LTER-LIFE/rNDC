@@ -81,22 +81,6 @@ test_that("get_meteo_for_long_period reports each chunk, and can be stopped betw
   expect_equal(calls, 1)
 })
 
-# an error as raised by gm_get() for a failed request
-http_error <- function(status) {
-  structure(class = c("rNDC_http_error", "error", "condition"),
-            list(message = paste("GroenMonitor request failed (HTTP", status, ")"), call = NULL, status = status))
-}
-
-# a fake gm_get that writes a small GeoTIFF, as the WCS of GroenMonitor would; the days in `missing` have no coverage
-fake_ndvi_download <- function(missing = character(0)) {
-  function(url, option, params, out_path, overwrite = TRUE) {
-    if (any(vapply(missing, grepl, NA, x = url, fixed = TRUE))) stop(http_error(404))
-    terra::writeRaster(terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 1, ymin = 0, ymax = 1, vals = c(0.2, 0.4, 0.6, 0.8)),
-                       out_path, overwrite = TRUE)
-    invisible(NULL)
-  }
-}
-
 test_that("the NDVI downloads report each day, and a stop removes the files", {
   testthat::local_mocked_bindings(gm_get = fake_ndvi_download())
   poly <- square_4326(0.1, 0.1, 0.9, 0.9)

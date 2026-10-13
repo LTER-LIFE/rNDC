@@ -1,16 +1,3 @@
-mock_download <- function(href, outfile, headers, overwrite = TRUE, ...) {
-  r <- terra::rast(nrows = 4, ncols = 4, xmin = 0, xmax = 1, ymin = 0, ymax = 1,
-                   crs = "EPSG:4326", vals = 1:16)
-  terra::writeRaster(r, outfile, overwrite = TRUE)
-  outfile
-}
-
-nitrogen_items <- function() {
-  list(stac_item("a", layer = "ntot", date = "2024-01-01"),
-       stac_item("b", layer = "nox", date = "2024-01-01"),
-       stac_item("c", layer = "ntot", date = "2025-01-01"))
-}
-
 test_that("stac_collect_metadata reads items from the STAC API", {
   local_stac_api(nitrogen_items())
   m <- stac_collect_metadata(c(5, 52, 6, 53), token = "t", endpoint = ndc_endpoint(), collection = "coll")

@@ -25,7 +25,7 @@ API tokens are read from environment variables (or can be passed through the `to
 | Variable | Used by |
 |---|---|
 | `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `ndc_metadata`, `ndc_citation`, `stac_availability`, `get_landuse_raster`, `get_nitrogen_raster`, `get_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
-| `ADC_TOKEN` | `adc_get`, `adc_get_all` (and the meteo functions built on them, which take `token` explicitly) |
+| `ADC_TOKEN` | `adc_get`, `adc_get_all`, `get_closest_meteostation`, `get_meteo_for_date`, `get_meteo_for_period`, `get_meteo_for_long_period` |
 
 For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`. A missing or empty token stops the function at once, naming the variable to set.
 
@@ -35,7 +35,7 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ### Via the *NatureDataCube* STAC API (see [`01_getting_started.ipynb`](examples/01_getting_started.ipynb) and [`stac_with_rstac.ipynb`](examples/advanced/stac_with_rstac.ipynb))
 
-- [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first)
+- [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first). The retrieval functions can record their parameters (`save_params = "file.json"`, never the token) and run again from the file (`params_file = "file.json"`); whatever you give overrides the file. [`ndc_repeat`](R/ndc_params.R) runs such a file without knowing its function.
 - [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters, or limited to some `collections`) in NatureDataCube.
 - [`ndc_metadata`](R/ndc_metadata.R), `ndc_citation`: Read the metadata of the datasets (title, license, extent, providers, and the fields of STAC extensions such as the citation and DOI of the Scientific extension), and write the reference of a dataset from it.
 - [`ndc_available`](R/ndc_available.R): List the datasets that have data for an area and/or a period: the STAC collections (checked against their items) and the datasets of other services ([`ndc_external_datasets`](R/ndc_external.R), with the coverage that is known for them; [`ndc_netherlands`](R/ndc_external.R) is the outline of the country).

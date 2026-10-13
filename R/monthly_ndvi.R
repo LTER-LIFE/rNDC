@@ -6,10 +6,13 @@
 #' @param poly sf. Area of interest (its bounding box is requested).
 #' @param year,month integer. Year and month.
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
+#' @inheritParams ndc_get
 #' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM`, or `NULL` if no data is available.
 #' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
-download_avg_ndvi_month <- function(poly, year, month, epsg = 32631) {
+download_avg_ndvi_month <- function(poly, year, month, epsg = 32631, params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("download_avg_ndvi_month", params_file)
+  if (!is.null(save_params)) params_save_when_done("download_avg_ndvi_month", save_params)
 
   message("Processing ", format(as.Date(sprintf("%04d-%02d-01", year, month)), "%B %Y"))
 
