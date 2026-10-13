@@ -2,6 +2,7 @@
 
 ## New
 
+* `ndc_metadata()` reads the metadata that the NatureDataCube publishes for its datasets (STAC collections) into a tibble: title, description, license, keywords, providers, spatial and temporal extent, and the fields of the STAC extensions, such as `sci:citation`, `sci:doi` and `sci:publications` of the Scientific extension. Fields of other extensions get a list-column each, found in the data. `ndc_citation()` writes the reference of a dataset from it (citation, DOI link and license).
 * `stac_availability()` tells which collections have items that intersect an area, and for which years, with one search over all of them (instead of counting the items of each collection). It was written for the Shiny app rNDC.Shiny, to mark the datasets that have data for the selected area.
 
 # rNDC 0.5.1

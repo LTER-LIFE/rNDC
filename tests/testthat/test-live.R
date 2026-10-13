@@ -13,6 +13,16 @@ test_that("the collections used by the package exist", {
   expect_true(all(c("lgn", "ntot", "nox", "nh3", "ndvi") %in% ndc_datasets()))
 })
 
+test_that("the collections publish the metadata that ndc_metadata() and ndc_citation() read", {
+  skip_unless_live()
+  m <- ndc_metadata(c("lgn", "ntot"))
+  expect_equal(m$id, c("lgn", "ntot"))
+  expect_false(anyNA(m$license))
+  expect_false(anyNA(m$citation))  # the Scientific extension: sci:citation
+  expect_match(m$doi[m$id == "lgn"], "^10\\.")  # sci:doi
+  expect_match(ndc_citation("lgn", metadata = m)[["lgn"]], "doi.org/10", fixed = FALSE)
+})
+
 test_that("one search tells which raster collections have items for an area", {
   skip_unless_live()
   here <- c(5.74, 52.05, 5.76, 52.07)

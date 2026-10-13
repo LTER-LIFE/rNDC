@@ -68,10 +68,11 @@ ndvi_item <- function(id, ndc_id, date, mean, std = NULL) {
 
 # Enable webmockr for the duration of a test, with a stub STAC API at example.org.
 # `items` is the list of STAC items returned by every search; `matched` the reported total.
+# `collections` is the list of collections that the API lists.
 # With `pages` (a list with the items of each page) the searches return the pages one after the other, linked
 # as in the STAC specification; `status` is the HTTP status of the searches.
 local_stac_api <- function(items = list(stac_item("a")), matched = length(items), pages = NULL, status = 200L,
-                           env = parent.frame()) {
+                           env = parent.frame(), collections = list(stac_collection("a"), stac_collection("b"))) {
   webmockr::enable(adapter = "httr", quiet = TRUE)
   withr::defer({
     webmockr::stub_registry_clear()
@@ -111,8 +112,7 @@ local_stac_api <- function(items = list(stac_item("a")), matched = length(items)
   webmockr::stub_request("get", "https://example.org/api/collections") |>
     webmockr::wi_th(headers = auth) |>
     webmockr::to_return(
-      body = json_body(list(collections = list(stac_collection("a"), stac_collection("b")),
-                            links = list())),
+      body = json_body(list(collections = collections, links = list())),
       headers = json_header)
   invisible(NULL)
 }
