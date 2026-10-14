@@ -1,4 +1,4 @@
-# rNDC (development version)
+# rNDC 0.5.2
 
 ## Changes
 
