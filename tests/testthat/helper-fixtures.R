@@ -187,7 +187,7 @@ square <- function(...) {
                                                        crs = sf::st_crs(4326))))
 }
 
-# ---- files with the parameters of a retrieval (R/ndc_params.R) ----
+# ---- files with the parameters of a retrieval (R/utils.R) ----
 
 # the search body that was sent last, without the fields that do not describe the search
 sent <- function() {
@@ -206,4 +206,22 @@ expect_no_secrets <- function(f) {
 meteo_url <- function(from, to) {
   paste0("https://agrodatacube.wur.nl/api/v2/rest/meteodata?output_epsg=4326&meteostation=260",
          "&fromdate=", from, "&todate=", to, "&page_size=500&page_offset=0")
+}
+
+# a collection as the API publishes it: with the Scientific extension, providers and a field of another extension
+# a collection as the API publishes it: with the Scientific extension, providers and a field of another extension
+rich_collection <- function(id = "lgn") {
+  list(type = "Collection", stac_version = "1.0.0", id = id, title = "Land Use (LGN)",
+       description = "Land use of the Netherlands.", license = "CC-BY-4.0",
+       keywords = list("lgn", "land-use"),
+       stac_extensions = list("https://stac-extensions.github.io/scientific/v1.0.0/schema.json"),
+       extent = list(spatial = list(bbox = list(c(3.31, 50.75, 7.23, 53.55))),
+                     temporal = list(interval = list(list("2024-01-01T00:00:00Z", "2024-12-31T00:00:00Z")))),
+       providers = list(list(name = "NatureDataCube", url = "https://example.org/geoserver",
+                             roles = list("host", "processor"), description = "Publication endpoint.")),
+       `sci:citation` = "Hazeu, G. (2026). LGN2024 [Data set]. 4TU.ResearchData.",
+       `sci:doi` = "10.4121/abc",
+       `sci:publications` = list(list(doi = "10.1/xyz", citation = "Hazeu et al. (2026). A paper."),
+                                 list(citation = "A report without DOI.")),
+       `proj:epsg` = 28992, links = list())
 }

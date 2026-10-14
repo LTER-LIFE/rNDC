@@ -1,3 +1,45 @@
+# Helpers that the whole package uses: small operators, the checks of tokens and HTTP errors, and the machinery of the
+# parameters files (`save_params` / `params_file`, see `ndc_repeat()`).
+
+# ---- Small helpers ----
+
+#' @noRd
+`%||%` <- function(x, y) {
+  if (is.null(x) || length(x) == 0 || (length(x) == 1 && is.na(x))) y else x
+}
+
+# ---- Tokens and HTTP errors ----
+
+# Stop with an informative message when an API token is missing (NULL, NA or empty), instead of sending a request
+# that the server will answer with an opaque 401.
+check_token <- function(token, service, envvar) {
+  if (length(token) != 1 || is.na(token) || !nzchar(trimws(as.character(token)))) {
+    stop(sprintf("%s token is missing. Set the `%s` environment variable or pass `token`.", service, envvar),
+         call. = FALSE)
+  }
+  invisible(token)
+}
+
+# Raise an informative error for a failed httr response, including the message sent by the server
+# (JSON or OWS/XML exception reports), instead of just the status text.
+stop_for_http_error <- function(response, service) {
+  if (!httr::http_error(response)) return(invisible(response))
+
+  msg <- tryCatch(httr::content(response, as = "text", encoding = "UTF-8"),
+                  error = function(e) "")
+  msg <- gsub("<[^>]+>", " ", msg)
+  msg <- trimws(gsub("[[:space:]]+", " ", gsub("[\"{}]", "", msg)))
+  if (nchar(msg) > 300) msg <- paste0(substr(msg, 1, 300), "...")
+
+  # a classed error, so that callers can tell e.g. a missing resource (404) from a server failure
+  stop(structure(class = c("rNDC_http_error", "error", "condition"),
+                 list(message = sprintf("%s request failed (HTTP %s)%s", service, httr::status_code(response),
+                                        if (nzchar(msg)) paste0(": ", msg) else "."),
+                      call = NULL, status = httr::status_code(response))))
+}
+
+# ---- Parameters of a retrieval in a JSON file ----
+
 # Saving the parameters of a retrieval to a JSON file, and running the retrieval from such a file. The functions that
 # can do it have the arguments `params_file` (read a file) and `save_params` (write one); see ndc_repeat() for the format.
 
@@ -219,60 +261,4 @@ params_apply <- function(name, path, env = parent.frame()) {
     if (eval(call("missing", as.name(arg)), env)) assign(arg, file[[arg]], envir = env)
   }
   invisible(file)
-}
-
-#' Repeat a retrieval from a file with its parameters
-#'
-#' The retrieval functions can record their parameters in a JSON file (`save_params = "file.json"`) and run again
-#' from such a file (`params_file = "file.json"`): the file is a record of what was asked, and `ndc_repeat()` runs a file
-#' without having to know which function it is for.
-#'
-#' The functions with `save_params` and `params_file` are [ndc_get()], [get_landuse_raster()], [get_nitrogen_raster()],
-#' [get_ndvi_stats()], [download_avg_ndvi_month()], [download_avg_ndvi_stack()], [get_closest_meteostation()],
-#' [get_meteo_for_date()], [get_meteo_for_period()], [get_meteo_for_long_period()], [adc_get()], [adc_get_all()] and
-#' [gm_get()]. A function with `save_params` writes the file when it has finished without an error (`ndc_get()`: when
-#' the search has succeeded). `params_file` supplies the arguments that you do not give yourself; what you give overrides the
-#' file, also `NULL` (for example `roi = NULL` leaves the area out).
-#'
-#' The file has `schema` (the format and the function: `"rNDC-get_landuse_raster/1"`), the arguments of the function as
-#' they were when it finished (the defaults too, so that a later change of a default does not change the file's
-#' meaning), and what describes the run: the time (`created`), the rNDC version (`rNDC`) and, for the functions that use
-#' the NatureDataCube, its `endpoint`. An area is written as a GeoJSON geometry in EPSG:4326 whatever form it was given
-#' in, so the file does not depend on a path that may change, and a period as text. The `ndc_get()` file also has the
-#' number of items matched (`matched`) and, with `save_ids = TRUE`, their ids (`items`).
-#'
-#' **What is not in a file.** The token is never written, and neither are the places where files go (`output_dir`,
-#' `out_dir`, `out_path`, `file_prefix`, `overwrite`): they are for the person who runs the retrieval. A file is not
-#' read for them either. A file is a record of the question, not of the answer, which changes as the data does.
-#' Fields that a function does not take from a file are ignored with a warning, a file for another function is refused,
-#' and a file written for another endpoint is run at the current one, with a warning. Coordinates are written with about
-#' 15 significant digits.
-#'
-#' **What cannot be recorded.** [assets_download_wcs()] takes the items of a search, and the functions that list
-#' what the catalogue holds ([ndc_datasets()], [ndc_count()], [ndc_available()], [ndc_metadata()]) are questions about
-#' the catalogue, not retrievals.
-#'
-#' @param path character. Path of the file.
-#' @param ... Arguments of the function of the file that override those of the file, such as `token` (which is never in
-#'   a file), `mode` or `out_dir`.
-#' @returns What the function of the file returns.
-#' @examples
-#' \dontrun{
-#' get_landuse_raster(c(5.74, 52.05, 5.76, 52.07), year = 2024, save_params = "landuse.json")
-#' ndc_repeat("landuse.json")                      # again, here or on another machine
-#' ndc_repeat("landuse.json", year = 2023)         # the same area, another year
-#' }
-#' @export
-ndc_repeat <- function(path, ...) {
-  if (!is.character(path) || length(path) != 1 || !file.exists(path)) {
-    stop("The file with the parameters was not found: ", paste(path, collapse = ", "), call. = FALSE)
-  }
-  content <- tryCatch(jsonlite::fromJSON(path, simplifyVector = FALSE),
-                      error = function(e) stop("'", path, "' is not valid JSON: ", conditionMessage(e), call. = FALSE))
-  schema <- if (is.list(content)) content$schema else NULL
-  name <- if (is.character(schema) && length(schema) == 1) sub("^rNDC-([A-Za-z_]+)/[0-9]+$", "\\1", schema) else ""
-  if (!name %in% names(params_specs)) {
-    stop("'", path, "' is not a file with the parameters of a retrieval of rNDC (its `schema` is missing or unknown).", call. = FALSE)
-  }
-  do.call(get(name, envir = asNamespace("rNDC")), c(list(params_file = path), list(...)))
 }

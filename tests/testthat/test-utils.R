@@ -1,4 +1,23 @@
-# Saving the parameters of ndc_get() to a JSON file, and searching from such a file.
+# The helpers that the whole package uses: the check of tokens, and the parameters files of the retrieval functions
+# (tested through ndc_get(); the other functions are in test-ndc_repeat.R).
+
+test_that("an empty token is refused before any request is sent", {
+  local_stac_api()
+  withr::local_envvar(NDC_TOKEN = "", ADC_TOKEN = "")
+  expect_error(ndc_get("coll"), "NatureDataCube token is missing")
+  expect_error(ndc_get("coll", token = NA_character_), "token is missing")
+  expect_error(ndc_get("coll", token = "  "), "token is missing")
+  expect_error(ndc_datasets(), "NDC_TOKEN")
+  expect_error(ndc_count(collection = "coll"), "token is missing")
+  expect_error(adc_get(option = "Fields", params = c(page_size = "1")), "AgroDataCube token is missing")
+  expect_error(adc_get(url = "https://agrodatacube.wur.nl/api/v2/rest/fields"), "ADC_TOKEN")
+  expect_error(adc_get(), "Provide either")
+
+  # the health check needs no token
+  webmockr::stub_request("get", "https://agrodatacube.wur.nl/api/v2/rest/lifeprobe") |>
+    webmockr::to_return(status = 200, body = "{}", headers = json_header)
+  expect_no_error(adc_get(option = "Health_check", params = NULL))
+})
 
 test_that("a search can be saved, and the file describes it", {
   local_stac_api(list(stac_item("a"), stac_item("b")))

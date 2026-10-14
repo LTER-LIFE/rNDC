@@ -1,42 +1,30 @@
-# Retrieving all pages of results: ndc_get(all_pages = TRUE) and adc_get_all().
+# adc_get() and adc_get_all(): requests to the AgroDataCube REST API.
 
-three_pages <- function() list(list(stac_item("a"), stac_item("b")), list(stac_item("c"), stac_item("d")),
-                               list(stac_item("e")))
+test_that("adc_get sends the token header, returns parsed content and fails on HTTP errors", {
+  withr::defer({ webmockr::stub_registry_clear(); webmockr::disable(adapter = "httr", quiet = TRUE) })
+  webmockr::enable(adapter = "httr", quiet = TRUE)
+  webmockr::stub_request("get", "https://agrodatacube.wur.nl/api/v2/rest/fields?output_epsg=4326") |>
+    webmockr::wi_th(headers = list(token = "secret")) |>
+    webmockr::to_return(body = json_body(list(features = list(list(id = 1)))), headers = json_header)
+  webmockr::stub_request("get", "https://agrodatacube.wur.nl/api/v2/rest/fields?output_epsg=4326") |>
+    webmockr::to_return(body = json_body(list(message = "denied")), status = 401, headers = json_header)
 
-test_that("ndc_get converts only the first page unless all_pages is TRUE", {
-  local_stac_api(pages = three_pages())
-  expect_warning(first <- ndc_get("coll", token = "t", mode = "sf", limit = 2), "Only 2 of 5 matched items")
-  expect_equal(nrow(first), 2)
-
-  local_stac_api(pages = three_pages())
-  expect_no_warning(all <- ndc_get("coll", token = "t", mode = "sf", limit = 2, all_pages = TRUE))
-  expect_s3_class(all, "sf")
-  expect_equal(nrow(all), 5)
-  expect_equal(all$title, paste("Item", c("a", "b", "c", "d", "e")))
+  res <- adc_get(option = "Fields", params = c(output_epsg = "4326"), token = "secret")
+  expect_equal(res$features[[1]]$id, 1)
+  expect_error(adc_get(option = "Fields", params = c(output_epsg = "4326"), token = "bad"), "401")
 })
 
-test_that("all_pages works for the tibble and sfc modes, and does not change the other modes", {
-  local_stac_api(pages = three_pages())
-  expect_equal(nrow(ndc_get("coll", token = "t", mode = "tibble", all_pages = TRUE)), 5)
-  local_stac_api(pages = three_pages())
-  expect_length(ndc_get("coll", token = "t", mode = "sfc", all_pages = TRUE), 5)
-
-  local_stac_api(pages = three_pages())
-  expect_length(ndc_get("coll", token = "t", mode = "items", all_pages = TRUE)$features, 2)  # first page, as before
-  local_stac_api(pages = three_pages())
-  expect_length(ndc_get("coll", token = "t", mode = "fetch", all_pages = TRUE)$features, 5)
+test_that("adc_get rejects unknown servers", {
+  expect_error(adc_get(option = "Fields", params = c(a = "1"), server = "zzz"), "Unknown `server`")
 })
 
-test_that("an all-pages search that matches nothing gives an empty result", {
-  local_stac_api(items = list())
-  res <- ndc_get("coll", token = "t", mode = "sf", all_pages = TRUE)
-  expect_s3_class(res, "sf")
-  expect_equal(nrow(res), 0)
-})
-
-test_that("an all-pages search passes errors on", {
-  local_stac_api(items = list(), status = 500L)
-  expect_error(ndc_get("coll", token = "t", mode = "sf", all_pages = TRUE))
+test_that("adc_get includes the API message in HTTP errors", {
+  with_adc_stubs()
+  webmockr::stub_request("get", "https://agrodatacube.wur.nl/api/v2/rest/fields?output_epsg=4326") |>
+    webmockr::to_return(body = json_body(list(status = "Geometry area too large")), status = 403,
+                        headers = json_header)
+  expect_error(adc_get(option = "Fields", params = c(output_epsg = "4326"), token = "t"),
+               "HTTP 403\\).*Geometry area too large")
 })
 
 fields_stub <- function(...) {

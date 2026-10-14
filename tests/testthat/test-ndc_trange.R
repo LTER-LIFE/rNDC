@@ -1,3 +1,5 @@
+# as_rfc3339() and ndc_trange(): dates for STAC searches.
+
 test_that("as_rfc3339 formats in UTC", {
   expect_equal(as_rfc3339("2024-01-31"), "2024-01-31T00:00:00Z")
 })
@@ -18,11 +20,4 @@ test_that("ndc_trange builds STAC datetime values", {
     expect_equal(ndc_trange(x), x)
   }
   expect_true(is.na(ndc_trange(c("2024-01-01", "2024-02-01", "2024-03-01"))))
-})
-
-test_that("split_date_range covers the range without overlap", {
-  r <- split_date_range("2024-01-01", "2024-01-20", by_days = 7)
-  expect_equal(nrow(r), 3)
-  expect_equal(r$from, as.Date(c("2024-01-01", "2024-01-08", "2024-01-15")))
-  expect_equal(r$to, as.Date(c("2024-01-07", "2024-01-14", "2024-01-20")))
 })

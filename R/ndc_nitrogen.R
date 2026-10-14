@@ -2,10 +2,10 @@
 # --------------------------------------------
 
 nitrogen_asset_name <- "wcs"
+
 nitrogen_subset_crs <- 32631L
 
 nitrogen_layer_choices <- c("ntot", "nox", "nh3")
-
 
 nitrogen_clean_layer_name <- function(x) {
   x <- as.character(x)
@@ -153,40 +153,4 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
     files = downloaded,
     metadata = meta
   )
-}
-
-get_nitrogen_stats <- function(aoi, year, layers, token = Sys.getenv("NDC_TOKEN"),
-                               endpoint = ndc_endpoint(),
-                               collection = NULL,
-                               out_dir = tempdir(),
-                               overwrite = TRUE,
-                               limit = 100,
-                               file_prefix = NULL) {
-  raster_res <- get_nitrogen_raster(
-    aoi = aoi,
-    year = year,
-    layers = layers,
-    token = token,
-    endpoint = endpoint,
-    collection = collection,
-    out_dir = out_dir,
-    overwrite = overwrite,
-    limit = limit,
-    file_prefix = file_prefix
-  )
-
-  meta <- raster_res$metadata
-  out <- tibble::tibble(ID = 1L)
-
-  for (i in seq_len(nrow(meta))) {
-    nm <- paste0(meta$layer[i], "_", meta$year[i], ".tif")
-    rnm <- paste0(meta$layer[i], "_", meta$year[i])
-    r <- raster_res$rasters[[rnm]]
-    if (is.null(r)) next
-
-    val <- terra::global(r, fun = mean, na.rm = TRUE)[1, 1]
-    out[[nm]] <- as.numeric(val)
-  }
-
-  out
 }

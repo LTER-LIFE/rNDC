@@ -35,9 +35,9 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ### Via the *NatureDataCube* STAC API (see [`01_getting_started.ipynb`](examples/01_getting_started.ipynb) and [`stac_with_rstac.ipynb`](examples/advanced/stac_with_rstac.ipynb))
 
-- [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first). The retrieval functions can record their parameters (`save_params = "file.json"`, never the token) and run again from the file (`params_file = "file.json"`); whatever you give overrides the file. [`ndc_repeat`](R/ndc_params.R) runs such a file without knowing its function.
+- [`ndc_get`](R/ndc_get.R): Search (and optionally download) data through a custom STAC query (with `all_pages = TRUE`, the modes that convert or download use all the pages of results, not only the first). The retrieval functions can record their parameters (`save_params = "file.json"`, never the token) and run again from the file (`params_file = "file.json"`); whatever you give overrides the file. [`ndc_repeat`](R/ndc_repeat.R) runs such a file without knowing its function.
 - [`ndc_datasets`](R/ndc_datasets.R): List all datasets (optionally constrained by query parameters, or limited to some `collections`) in NatureDataCube.
-- [`ndc_metadata`](R/ndc_metadata.R), `ndc_citation`: Read the metadata of the datasets (title, license, extent, providers, and the fields of STAC extensions such as the citation and DOI of the Scientific extension), and write the reference of a dataset from it.
+- [`ndc_metadata`](R/ndc_metadata.R), [`ndc_citation`](R/ndc_citation.R): Read the metadata of the datasets (title, license, extent, providers, and the fields of STAC extensions such as the citation and DOI of the Scientific extension), and write the reference of a dataset from it.
 - [`ndc_available`](R/ndc_available.R): List the datasets that have data for an area and/or a period: the STAC collections (checked against their items) and the datasets of other services ([`ndc_external_datasets`](R/ndc_external.R), with the coverage that is known for them; [`ndc_netherlands`](R/ndc_external.R) is the outline of the country).
 - [`stac_availability`](R/stac_availability.R): Which collections have items for an area, and for which years, with one search over all of them (e.g. "is there land use or nitrogen data here?").
 - [`ndc_count`](R/ndc_count.R): Obtain a number of items available in NatureDataCube datasets (optionally constrained by query parameters).
@@ -48,25 +48,25 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ### Thematic rasters via the *NatureDataCube* STAC API
 
-- [`get_landuse_raster`](R/landuse.R): Download the Land Use raster for an area of interest and year, clipped to the area.
-- [`get_nitrogen_raster`](R/nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
+- [`get_landuse_raster`](R/ndc_landuse.R): Download the Land Use raster for an area of interest and year, clipped to the area.
+- [`get_nitrogen_raster`](R/ndc_nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
 - [`ndc_landuse_years`, `ndc_nitrogen_years`, `ndc_landuse_default_year`, `ndc_nitrogen_layers`, `ndc_landuse_collection`](R/ndc_defaults.R): The years for which these rasters exist (read from the STAC API), and their defaults.
-- [`get_ndvi_stats`](R/ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
-- `stac_*` helpers ([`stac_raster_helpers.R`](R/stac_raster_helpers.R)): Shared building blocks for the functions above (`stac_collect_metadata`, `stac_year_trange`, `stac_wcs_subset_suffix`, `stac_download_one`, `stac_clip_raster_to_aoi`, `stac_make_headers`).
+- [`get_ndvi_stats`](R/ndc_ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
+- `stac_*` helpers ([`stac_metadata.R`](R/stac_metadata.R), [`stac_wcs.R`](R/stac_wcs.R), [`stac_raster.R`](R/stac_raster.R)): Shared building blocks for the functions above (`stac_collect_metadata`, `stac_year_trange`, `stac_wcs_subset_suffix`, `stac_download_one`, `stac_clip_raster_to_aoi`, `stac_make_headers`).
 
 ### Via the *AgroDataCube* REST API (see [`agrodatacube_rest.ipynb`](examples/advanced/agrodatacube_rest.ipynb))
 
 - [`adc_url`](R/adc_url.R): Compose URL text string for submitting data requests through the REST API.
 - [`adc_get`](R/adc_get.R): Submit requests via REST API.
 - [`adc_get_all`](R/adc_get_all.R): Submit a request whose results are paged (e.g. `Fields`) and combine all the pages.
-- [`get_closest_meteostation`](R/get_closest_meteostation.R): Find the meteorological station closest to a study area.
-- [`get_meteo_for_date`](R/get_meteo_for_date.R), [`get_meteo_for_period`](R/get_meteo_for_period.R), [`get_meteo_for_long_period`](R/get_meteo_for_long_period.R): Get weather data for a station for one day, a period, or a long period split into several requests.
+- [`get_closest_meteostation`](R/adc_meteo.R): Find the meteorological station closest to a study area.
+- [`get_meteo_for_date`](R/adc_meteo.R), [`get_meteo_for_period`](R/adc_meteo.R), [`get_meteo_for_long_period`](R/adc_meteo.R): Get weather data for a station for one day, a period, or a long period split into several requests.
 
 ### Via the *GroenMonitor* WCS GeoServer (see [`groenmonitor_wcs.ipynb`](examples/advanced/groenmonitor_wcs.ipynb))
 
 - [`gm_url`](R/gm_url.R): Compose URL text string for submitting data requests through the *GroenMonitor* WCS GeoServer.
 - [`gm_get`](R/gm_get.R): Submit requests to the *GroenMonitor* WCS GeoServer.
-- [`download_avg_ndvi_month`](R/monthly_ndvi.R), [`download_avg_ndvi_stack`](R/monthly_ndvi_period.R): Compute the average NDVI raster for a month, or a stack of monthly averages over a period.
+- [`download_avg_ndvi_month`](R/gm_ndvi.R), [`download_avg_ndvi_stack`](R/gm_ndvi.R): Compute the average NDVI raster for a month, or a stack of monthly averages over a period.
 
 ### Long downloads
 
