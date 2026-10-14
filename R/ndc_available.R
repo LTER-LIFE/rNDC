@@ -88,15 +88,6 @@ external_in_area <- function(roi) {
   any(hit)
 }
 
-# The two ends of a period as POSIXct (`NA` for an open side), from anything that ndc_trange() accepts
-trange_bounds <- function(trange) {
-  if (is.null(trange)) return(as.POSIXct(c(NA, NA), tz = "UTC"))
-  parts <- strsplit(ndc_trange(trange), "/", fixed = TRUE)[[1]]
-  if (length(parts) == 1) parts <- c(parts, parts)
-  parts[parts == ".."] <- NA
-  as.POSIXct(lubridate::as_datetime(parts), tz = "UTC")
-}
-
 # For datasets that start at `start` (a Date; `NA`: no time dimension, always) and run to `end` (`NA`: to the
 # present): does the period overlap them?
 external_in_period <- function(start, end, trange) {

@@ -3,12 +3,13 @@
 
 #' STAC raster helpers
 #'
-#' Building blocks shared by the thematic raster functions ([get_landuse_raster()],
-#' [get_nitrogen_raster()]): querying STAC items, downloading WCS subsets and
-#' clipping rasters to an area of interest.
+#' Building blocks shared by the thematic raster functions ([ndc_landuse_raster()],
+#' [ndc_nitrogen_raster()]): querying STAC items, downloading WCS subsets and
+#' clipping rasters to a region of interest.
 #'
 #' @param token character. API token.
-#' @param aoi sf, sfc or numeric. Area of interest, normalised with [ndc_roi()].
+#' @param roi sf, sfc or numeric. Region of interest, normalised with [ndc_roi()].
+#' @param aoi Deprecated: use `roi`.
 #' @param endpoint,collection character. STAC endpoint and collection ID.
 #' @param asset_name character. Name of the STAC asset holding the raster URL.
 #' @param limit integer. Maximum number of STAC items per page.
@@ -83,15 +84,16 @@ stac_feature_meta <- function(feat, asset_name = "wcs") {
 
 #' @rdname stac_helpers
 #' @export
-stac_collect_metadata <- function(aoi, token, endpoint, collection, asset_name = "wcs", limit = 100,
-                                  trange = NULL) {
-  aoi_4326 <- ndc_roi(aoi)
+stac_collect_metadata <- function(roi, token, endpoint, collection, asset_name = "wcs", limit = 100,
+                                  trange = NULL, aoi = NULL) {
+  if (!is.null(aoi)) roi <- deprecated_argument(aoi, "aoi", "roi", "stac_collect_metadata")
+  roi_4326 <- ndc_roi(roi)
   headers <- stac_make_headers(token)
 
   query <- rstac::stac(endpoint) |>
     rstac::stac_search(
       collections = collection,
-      intersects = aoi_4326,
+      intersects = roi_4326,
       limit = limit
     )
   if (!is.null(trange)) {

@@ -41,17 +41,17 @@ test_that("the interrupt function stops the download with an error of its own cl
   expect_match(conditionMessage(err), "interrupted")
 })
 
-test_that("get_meteo_for_long_period reports each chunk, and can be stopped between chunks", {
+test_that("adc_weather_long_period reports each chunk, and can be stopped between chunks", {
   calls <- 0
   testthat::local_mocked_bindings(
-    get_meteo_for_period = function(...) {
+    adc_weather_period = function(...) {
       calls <<- calls + 1
       sf::st_sf(a = calls, geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326))
     }
   )
   seen <- list()
   res <- suppressMessages(ndc_with_progress(
-    get_meteo_for_long_period(310, "2024-01-01", "2024-01-20", token = "t", by_days = 7),
+    adc_weather_long_period(310, c("2024-01-01", "2024-01-20"), token = "t", by_days = 7),
     report = function(message, current, total) seen[[length(seen) + 1]] <<- list(message, current, total)
   ))
   expect_equal(nrow(res), 3)
@@ -61,18 +61,18 @@ test_that("get_meteo_for_long_period reports each chunk, and can be stopped betw
 
   # the console only gets the messages when nobody follows the progress
   expect_no_message(ndc_with_progress(
-    get_meteo_for_long_period(310, "2024-01-01", "2024-01-20", token = "t", by_days = 7),
+    adc_weather_long_period(310, c("2024-01-01", "2024-01-20"), token = "t", by_days = 7),
     report = function(...) NULL
   ))
   expect_message(
-    get_meteo_for_long_period(310, "2024-01-01", "2024-01-20", token = "t", by_days = 7),
+    adc_weather_long_period(310, c("2024-01-01", "2024-01-20"), token = "t", by_days = 7),
     "Downloading 2024-01-01 -> 2024-01-07 (1/3)", fixed = TRUE
   )
 
   calls <- 0
   stopped <- tryCatch(
     suppressMessages(ndc_with_progress(
-      get_meteo_for_long_period(310, "2024-01-01", "2024-01-20", token = "t", by_days = 7),
+      adc_weather_long_period(310, c("2024-01-01", "2024-01-20"), token = "t", by_days = 7),
       interrupt = function() calls >= 1  # stop before the second request
     )),
     rNDC_interrupted = function(e) "stopped"
@@ -86,7 +86,7 @@ test_that("the NDVI downloads report each day, and a stop removes the files", {
   poly <- square_4326(0.1, 0.1, 0.9, 0.9)
   seen <- list()
   r <- suppressMessages(ndc_with_progress(
-    download_avg_ndvi_month(poly, 2024, 2),
+    gm_ndvi_month(poly, 2024, 2),
     report = function(message, current, total) seen[[length(seen) + 1]] <<- list(message, current, total)
   ))
   expect_s4_class(r, "SpatRaster")
@@ -98,7 +98,7 @@ test_that("the NDVI downloads report each day, and a stop removes the files", {
   n <- 0
   expect_error(
     suppressMessages(ndc_with_progress(
-      download_avg_ndvi_month(poly, 2024, 2),
+      gm_ndvi_month(poly, 2024, 2),
       report = function(...) n <<- n + 1,
       interrupt = function() n >= 5
     )),
@@ -113,7 +113,7 @@ test_that("the NDVI stack counts the days of all months, and cleans up when stop
   poly <- square_4326(0.1, 0.1, 0.9, 0.9)
   seen <- list()
   r <- suppressMessages(ndc_with_progress(
-    download_avg_ndvi_stack(poly, 2024, 1, 2024, 2),
+    gm_ndvi_stack(poly, c("2024-01-01", "2024-02-29")),
     report = function(message, current, total) seen[[length(seen) + 1]] <<- list(message, current, total)
   ))
   expect_s4_class(r, "SpatRaster")
@@ -124,7 +124,7 @@ test_that("the NDVI stack counts the days of all months, and cleans up when stop
 
   before <- list.files(tempdir(), "^ndvi_temp_")
   expect_error(
-    suppressMessages(ndc_with_progress(download_avg_ndvi_stack(poly, 2024, 1, 2024, 2), interrupt = function() TRUE)),
+    suppressMessages(ndc_with_progress(gm_ndvi_stack(poly, c("2024-01-01", "2024-02-29")), interrupt = function() TRUE)),
     class = "rNDC_interrupted"
   )
   expect_identical(list.files(tempdir(), "^ndvi_temp_"), before)
@@ -135,26 +135,26 @@ test_that("days without coverage are skipped, other failures are raised", {
 
   # 404 (no coverage) for some days: averaged over the others
   testthat::local_mocked_bindings(gm_get = fake_ndvi_download(missing = c("_20240201", "_20240202")))
-  r <- suppressMessages(download_avg_ndvi_month(poly, 2024, 2))
+  r <- suppressMessages(gm_ndvi_month(poly, 2024, 2))
   expect_equal(names(r), "ndvi_mean_202402")
 
   # no coverage at all: NULL
   testthat::local_mocked_bindings(gm_get = function(...) stop(http_error(404)))
-  expect_null(suppressMessages(download_avg_ndvi_month(poly, 2024, 2)))
+  expect_null(suppressMessages(gm_ndvi_month(poly, 2024, 2)))
 
   # a client error (e.g. 400) is not "no data"
   testthat::local_mocked_bindings(gm_get = function(...) stop(http_error(400)))
-  expect_error(suppressMessages(download_avg_ndvi_month(poly, 2024, 2)), "HTTP 400")
+  expect_error(suppressMessages(gm_ndvi_month(poly, 2024, 2)), "HTTP 400")
 })
 
 test_that("gm_download_day retries server failures and then raises them", {
   dir <- withr::local_tempdir()
   bbox <- c(xmin = "0", xmax = "1", ymin = "0", ymax = "1")
   calls <- 0
-  testthat::local_mocked_bindings(gm_get = function(url, out_path, ...) {
+  testthat::local_mocked_bindings(gm_get = function(url, output_path, ...) {
     calls <<- calls + 1
     if (calls < 3) stop(http_error(503))
-    file.create(out_path)
+    file.create(output_path)
   })
   path <- gm_download_day(as.Date("2024-02-01"), bbox, dir, pause = 0)
   expect_match(path, "ndvi_20240201.tif$")

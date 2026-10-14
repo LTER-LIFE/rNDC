@@ -1,4 +1,4 @@
-# get_landuse_raster() and the metadata of the land use items.
+# ndc_landuse_raster() and the metadata of the land use items.
 
 test_that("land use items are filtered by year", {
   items <- list(stac_item("a", date = "2024-01-01", keywords = list("lgn")),
@@ -12,9 +12,9 @@ test_that("land use items are filtered by year", {
   local_mocked_bindings(
     stac_download_one = function(href, ...) { urls <<- c(urls, href); mock_download(href, ...) }
   )
-  res <- get_landuse_raster(square_4326(), year = 2024, token = "t", out_dir = withr::local_tempdir(),
+  res <- ndc_landuse_raster(square_4326(), year = 2024, token = "t", output_dir = withr::local_tempdir(),
                              min_file_size = 0)
   expect_equal(names(res$stack), "LGN_2024")
   expect_match(urls, "^https://example.org/data/a&subset=")
-  expect_error(get_landuse_raster(square_4326(), year = 1999, token = "t"), "year 1999")
+  expect_error(ndc_landuse_raster(square_4326(), year = 1999, token = "t"), "year 1999")
 })

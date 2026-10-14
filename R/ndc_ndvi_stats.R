@@ -9,12 +9,12 @@
 #' object with the column `ndc_id` (as the polygons of the project collections have), only the polygons with
 #' those ids are kept.
 #'
-#' @param aoi character, numeric or sf. Area of interest, see [ndc_roi()].
+#' @param roi character, numeric or sf. Region of interest, see [ndc_roi()].
 #' @param collection character. STAC collection with the NDVI statistics, e.g. `"ndvi-lter"` or `"ndvi-snl"`.
-#' @param from,to Date or character. First and last day of the period (the whole of `to` counts). `NA` leaves
-#'   a side of the period open.
-#' @param ndc_id character. Ids of the polygons to keep. By default the `ndc_id` column of `aoi`, if it has
-#'   one (otherwise all the polygons that intersect `aoi` are kept).
+#' @param trange Date or character. The first and the last day of the period (the whole of the last day counts),
+#'   see [ndc_trange()]; `NA` leaves a side open, and `NULL` (the default) the whole period.
+#' @param ndc_id character. Ids of the polygons to keep. By default the `ndc_id` column of `roi`, if it has
+#'   one (otherwise all the polygons that intersect `roi` are kept).
 #' @param token character. API token.
 #' @inheritParams ndc_get
 #' @returns A tibble with one row per polygon and month: `ndc_id`, `month` (`"YYYY-MM"`), `ndvi_mean`,
@@ -22,19 +22,20 @@
 #'   matches.
 #' @export
 
-get_ndvi_stats <- function(aoi, collection, from = NA, to = NA, ndc_id = NULL,
+ndc_ndvi_stats <- function(roi, collection, trange = NULL, ndc_id = NULL,
                            token = Sys.getenv("NDC_TOKEN"), params_file = NULL, save_params = NULL) {
-  if (!is.null(params_file)) params_apply("get_ndvi_stats", params_file)
-  if (!is.null(save_params)) params_save_when_done("get_ndvi_stats", save_params)
+  if (!is.null(params_file)) params_apply("ndc_ndvi_stats", params_file)
+  if (!is.null(save_params)) params_save_when_done("ndc_ndvi_stats", save_params)
 
   # the whole of the last day counts: a date alone would be midnight at the start of it
-  trange <- ndc_trange(c(as_datetime(from), as_datetime(to) + 86399))
-  if (is.na(trange)) trange <- NULL
+  bounds <- trange_bounds(trange)
+  period <- ndc_trange(c(bounds[1], bounds[2] + 86399))
+  if (is.na(period)) period <- NULL
 
-  items <- ndc_get(collection = collection, roi = aoi, trange = trange, token = token, limit = 1000,
+  items <- ndc_get(collections = collection, roi = roi, trange = period, token = token, limit = 1000,
                    mode = "sf", all_pages = TRUE)
 
-  if (is.null(ndc_id) && inherits(aoi, "sf") && "ndc_id" %in% names(aoi)) ndc_id <- aoi$ndc_id
+  if (is.null(ndc_id) && inherits(roi, "sf") && "ndc_id" %in% names(roi)) ndc_id <- roi$ndc_id
   ndc_id <- unique(as.character(ndc_id[!is.na(ndc_id)]))
   if (length(ndc_id) > 0 && "ndc_id" %in% names(items)) {
     items <- items[as.character(items$ndc_id) %in% ndc_id, , drop = FALSE]

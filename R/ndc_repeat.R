@@ -4,14 +4,14 @@
 #' from such a file (`params_file = "file.json"`): the file is a record of what was asked, and `ndc_repeat()` runs a file
 #' without having to know which function it is for.
 #'
-#' The functions with `save_params` and `params_file` are [ndc_get()], [get_landuse_raster()], [get_nitrogen_raster()],
-#' [get_ndvi_stats()], [download_avg_ndvi_month()], [download_avg_ndvi_stack()], [get_closest_meteostation()],
-#' [get_meteo_for_date()], [get_meteo_for_period()], [get_meteo_for_long_period()], [adc_get()], [adc_get_all()] and
+#' The functions with `save_params` and `params_file` are [ndc_get()], [ndc_landuse_raster()], [ndc_nitrogen_raster()],
+#' [ndc_ndvi_stats()], [gm_ndvi_month()], [gm_ndvi_stack()], [adc_weather_station()],
+#' [adc_weather_date()], [adc_weather_period()], [adc_weather_long_period()], [adc_get()], [adc_get_all()] and
 #' [gm_get()]. A function with `save_params` writes the file when it has finished without an error (`ndc_get()`: when
 #' the search has succeeded). `params_file` supplies the arguments that you do not give yourself; what you give overrides the
 #' file, also `NULL` (for example `roi = NULL` leaves the area out).
 #'
-#' The file has `schema` (the format and the function: `"rNDC-get_landuse_raster/1"`), the arguments of the function as
+#' The file has `schema` (the format and the function: `"rNDC-ndc_landuse_raster/1"`), the arguments of the function as
 #' they were when it finished (the defaults too, so that a later change of a default does not change the file's
 #' meaning), and what describes the run: the time (`created`), the rNDC version (`rNDC`) and, for the functions that use
 #' the NatureDataCube, its `endpoint`. An area is written as a GeoJSON geometry in EPSG:4326 whatever form it was given
@@ -35,7 +35,7 @@
 #' @returns What the function of the file returns.
 #' @examples
 #' \dontrun{
-#' get_landuse_raster(c(5.74, 52.05, 5.76, 52.07), year = 2024, save_params = "landuse.json")
+#' ndc_landuse_raster(c(5.74, 52.05, 5.76, 52.07), year = 2024, save_params = "landuse.json")
 #' ndc_repeat("landuse.json")                      # again, here or on another machine
 #' ndc_repeat("landuse.json", year = 2023)         # the same area, another year
 #' }

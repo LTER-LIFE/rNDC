@@ -5,16 +5,16 @@
 #' Download the daily _GroenMonitor_ NDVI rasters of a month for the bounding box
 #' of an area of interest and average them. Days without data are skipped.
 #'
-#' @param poly sf. Area of interest (its bounding box is requested).
+#' @param roi character, numeric or sf. Region of interest, see [ndc_roi()]; its bounding box is requested.
 #' @param year,month integer. Year and month.
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
 #' @inheritParams ndc_get
 #' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM`, or `NULL` if no data is available.
 #' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
-download_avg_ndvi_month <- function(poly, year, month, epsg = 32631, params_file = NULL, save_params = NULL) {
-  if (!is.null(params_file)) params_apply("download_avg_ndvi_month", params_file)
-  if (!is.null(save_params)) params_save_when_done("download_avg_ndvi_month", save_params)
+gm_ndvi_month <- function(roi, year, month, epsg = 32631, params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("gm_ndvi_month", params_file)
+  if (!is.null(save_params)) params_save_when_done("gm_ndvi_month", save_params)
 
   message("Processing ", format(as.Date(sprintf("%04d-%02d-01", year, month)), "%B %Y"))
 
@@ -22,7 +22,7 @@ download_avg_ndvi_month <- function(poly, year, month, epsg = 32631, params_file
   dir.create(tmpdir, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(tmpdir, recursive = TRUE, force = TRUE), add = TRUE)
 
-  files <- gm_download_month(year, month, gm_bbox(poly, epsg), tmpdir)
+  files <- gm_download_month(year, month, gm_bbox(roi, epsg), tmpdir)
   message("Downloaded ", length(files), " NDVI layer(s) for the month")
 
   r_mean <- gm_month_mean(files, year, month)
@@ -32,25 +32,25 @@ download_avg_ndvi_month <- function(poly, year, month, epsg = 32631, params_file
 
 #' Monthly average NDVI over a period
 #'
-#' Compute the monthly average NDVI (see [download_avg_ndvi_month()]) for every
-#' month between two months, and stack the results on a common grid.
+#' Compute the monthly average NDVI (see [gm_ndvi_month()]) for every
+#' month from the one of the first date to the one of the last date of a period, and stack the results on a common grid.
 #'
-#' @param poly sf. Area of interest (its bounding box is requested).
-#' @param start_year,start_month,end_year,end_month integer. First and last month (both included).
+#' @param roi character, numeric or sf. Region of interest, see [ndc_roi()]; its bounding box is requested.
+#' @param trange Date or character. The first and the last day of the period (two dates, or `"YYYY-MM-DD"` texts): the months of both are included.
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
 #' @inheritParams ndc_get
 #' @returns A `SpatRaster` with one layer per month with data (named `ndvi_mean_YYYYMM`), or `NULL` if no data is available.
 #' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
-download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end_month, epsg = 32631,
-                                    params_file = NULL, save_params = NULL) {
-  if (!is.null(params_file)) params_apply("download_avg_ndvi_stack", params_file)
-  if (!is.null(save_params)) params_save_when_done("download_avg_ndvi_stack", save_params)
+gm_ndvi_stack <- function(roi, trange, epsg = 32631, params_file = NULL, save_params = NULL) {
+  if (!is.null(params_file)) params_apply("gm_ndvi_stack", params_file)
+  if (!is.null(save_params)) params_save_when_done("gm_ndvi_stack", save_params)
 
-  start_date <- as.Date(sprintf("%04d-%02d-01", start_year, start_month))
-  end_date   <- as.Date(sprintf("%04d-%02d-01", end_year, end_month))
+  dates <- trange_dates(trange)
+  start_date <- as.Date(format(dates[1], "%Y-%m-01"))
+  end_date   <- as.Date(format(dates[2], "%Y-%m-01"))
   month_seq  <- seq(start_date, end_date, by = "month")
-  bbox <- gm_bbox(poly, epsg)
+  bbox <- gm_bbox(roi, epsg)
 
   # the daily tiles are removed when the function ends, also when it is interrupted (see ndc_with_progress())
   tmpdir <- tempfile("ndvi_temp_")
@@ -96,11 +96,11 @@ download_avg_ndvi_stack <- function(poly, start_year, start_month, end_year, end
   terra::rast(raster_list)
 }
 
-# Internal helpers shared by download_avg_ndvi_month() and download_avg_ndvi_stack()
+# Internal helpers shared by gm_ndvi_month() and gm_ndvi_stack()
 
-# Bounding box of `poly` in `epsg`, as the numbers of the WCS `subset` parameters
-gm_bbox <- function(poly, epsg) {
-  bb <- st_bbox(st_transform(poly, epsg))
+# Bounding box of the region `roi` in `epsg`, as the numbers of the WCS `subset` parameters
+gm_bbox <- function(roi, epsg) {
+  bb <- st_bbox(st_transform(ndc_roi(roi), epsg))
   vapply(c("xmin", "xmax", "ymin", "ymax"),
          function(k) format(unname(bb[k]), scientific = FALSE, digits = 15, trim = TRUE), "")
 }
@@ -115,7 +115,7 @@ gm_download_day <- function(date, bbox, dir, retries = 2L, pause = 1) {
 
   for (attempt in seq_len(retries + 1L)) {
     result <- tryCatch({
-      gm_get(url, out_path = file)
+      gm_get(url, output_path = file)
       file
     }, error = function(e) e)
     if (!inherits(result, "error")) return(result)

@@ -2,17 +2,18 @@
 # retries). See `stac_make_headers()` for the documentation of the helpers.
 
 #' @rdname stac_helpers
-stac_bbox_in_crs <- function(aoi, target_crs = 32631L) {
-  aoi_4326 <- ndc_roi(aoi)
-  aoi_sf <- sf::st_as_sf(aoi_4326)
-  aoi_proj <- sf::st_transform(aoi_sf, target_crs)
-  sf::st_bbox(aoi_proj)
+stac_bbox_in_crs <- function(roi, target_crs = 32631L) {
+  roi_4326 <- ndc_roi(roi)
+  roi_sf <- sf::st_as_sf(roi_4326)
+  roi_proj <- sf::st_transform(roi_sf, target_crs)
+  sf::st_bbox(roi_proj)
 }
 
 #' @rdname stac_helpers
 #' @export
-stac_wcs_subset_suffix <- function(aoi, target_crs = 32631L, x_name = "E", y_name = "N") {
-  bbox <- stac_bbox_in_crs(aoi, target_crs = target_crs)
+stac_wcs_subset_suffix <- function(roi, target_crs = 32631L, x_name = "E", y_name = "N", aoi = NULL) {
+  if (!is.null(aoi)) roi <- deprecated_argument(aoi, "aoi", "roi", "stac_wcs_subset_suffix")
+  bbox <- stac_bbox_in_crs(roi, target_crs = target_crs)
   fmt <- function(x) format(as.numeric(x), scientific = FALSE, trim = TRUE, digits = 12)
 
   paste0(

@@ -24,14 +24,16 @@ API tokens are read from environment variables (or can be passed through the `to
 
 | Variable | Used by |
 |---|---|
-| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `ndc_metadata`, `ndc_citation`, `stac_availability`, `get_landuse_raster`, `get_nitrogen_raster`, `get_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
-| `ADC_TOKEN` | `adc_get`, `adc_get_all`, `get_closest_meteostation`, `get_meteo_for_date`, `get_meteo_for_period`, `get_meteo_for_long_period` |
+| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `ndc_metadata`, `ndc_citation`, `stac_availability`, `ndc_landuse_raster`, `ndc_nitrogen_raster`, `ndc_ndvi_stats`, `ndc_landuse_years`, `ndc_nitrogen_years` |
+| `ADC_TOKEN` | `adc_get`, `adc_get_all`, `adc_weather_station`, `adc_weather_date`, `adc_weather_period`, `adc_weather_long_period` |
 
 For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`. A missing or empty token stops the function at once, naming the variable to set.
 
 The STAC endpoint defaults to the NatureDataCube test server. To use another one, set `options(rNDC.endpoint = "https://.../api/")` (see [`ndc_endpoint`](R/ndc_endpoint.R)).
 
 ## Main R functions
+
+The function names start with the source of the data (`ndc_` for the NatureDataCube, `adc_` for the AgroDataCube, `gm_` for the GroenMonitor, `stac_` for the building blocks), and an argument has the same name everywhere: the region is `roi`, a period is `trange` (two dates, `NA` for an open side), a weather station is `station`, and the output goes to `output_dir` or `output_path`. Before version 0.5.2 some functions were called differently (`get_landuse_raster()`, `get_meteo_for_period()`, `download_avg_ndvi_month()`, ...): the old names still work, with a warning, see `?"rNDC-deprecated"` and [NEWS.md](NEWS.md).
 
 ### Via the *NatureDataCube* STAC API (see [`01_getting_started.ipynb`](examples/01_getting_started.ipynb) and [`stac_with_rstac.ipynb`](examples/advanced/stac_with_rstac.ipynb))
 
@@ -48,10 +50,10 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 
 ### Thematic rasters via the *NatureDataCube* STAC API
 
-- [`get_landuse_raster`](R/ndc_landuse.R): Download the Land Use raster for an area of interest and year, clipped to the area.
-- [`get_nitrogen_raster`](R/ndc_nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
+- [`ndc_landuse_raster`](R/ndc_landuse.R): Download the Land Use raster for an area of interest and year, clipped to the area.
+- [`ndc_nitrogen_raster`](R/ndc_nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
 - [`ndc_landuse_years`, `ndc_nitrogen_years`, `ndc_landuse_default_year`, `ndc_nitrogen_layers`, `ndc_landuse_collection`](R/ndc_defaults.R): The years for which these rasters exist (read from the STAC API), and their defaults.
-- [`get_ndvi_stats`](R/ndc_ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
+- [`ndc_ndvi_stats`](R/ndc_ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
 - `stac_*` helpers ([`stac_metadata.R`](R/stac_metadata.R), [`stac_wcs.R`](R/stac_wcs.R), [`stac_raster.R`](R/stac_raster.R)): Shared building blocks for the functions above (`stac_collect_metadata`, `stac_year_trange`, `stac_wcs_subset_suffix`, `stac_download_one`, `stac_clip_raster_to_aoi`, `stac_make_headers`).
 
 ### Via the *AgroDataCube* REST API (see [`agrodatacube_rest.ipynb`](examples/advanced/agrodatacube_rest.ipynb))
@@ -59,18 +61,18 @@ The STAC endpoint defaults to the NatureDataCube test server. To use another one
 - [`adc_url`](R/adc_url.R): Compose URL text string for submitting data requests through the REST API.
 - [`adc_get`](R/adc_get.R): Submit requests via REST API.
 - [`adc_get_all`](R/adc_get_all.R): Submit a request whose results are paged (e.g. `Fields`) and combine all the pages.
-- [`get_closest_meteostation`](R/adc_meteo.R): Find the meteorological station closest to a study area.
-- [`get_meteo_for_date`](R/adc_meteo.R), [`get_meteo_for_period`](R/adc_meteo.R), [`get_meteo_for_long_period`](R/adc_meteo.R): Get weather data for a station for one day, a period, or a long period split into several requests.
+- [`adc_weather_station`](R/adc_weather.R): Find the meteorological station closest to a study area.
+- [`adc_weather_date`](R/adc_weather.R), [`adc_weather_period`](R/adc_weather.R), [`adc_weather_long_period`](R/adc_weather.R): Get weather data for a station for one day, a period, or a long period split into several requests.
 
 ### Via the *GroenMonitor* WCS GeoServer (see [`groenmonitor_wcs.ipynb`](examples/advanced/groenmonitor_wcs.ipynb))
 
 - [`gm_url`](R/gm_url.R): Compose URL text string for submitting data requests through the *GroenMonitor* WCS GeoServer.
 - [`gm_get`](R/gm_get.R): Submit requests to the *GroenMonitor* WCS GeoServer.
-- [`download_avg_ndvi_month`](R/gm_ndvi.R), [`download_avg_ndvi_stack`](R/gm_ndvi.R): Compute the average NDVI raster for a month, or a stack of monthly averages over a period.
+- [`gm_ndvi_month`](R/gm_ndvi.R), [`gm_ndvi_stack`](R/gm_ndvi.R): Compute the average NDVI raster for a month, or a stack of monthly averages over a period.
 
 ### Long downloads
 
-- [`ndc_with_progress`](R/ndc_progress.R): Follow, or stop, functions that make many requests (`get_meteo_for_long_period`, `download_avg_ndvi_month`, `download_avg_ndvi_stack`): they report the request that starts to a `report` function, and stop with an error of class `rNDC_interrupted` when an `interrupt` function says so. Used by [rNDC.Shiny](https://github.com/LTER-LIFE/rNDC-Shiny) for its progress bar.
+- [`ndc_with_progress`](R/ndc_progress.R): Follow, or stop, functions that make many requests (`adc_weather_long_period`, `gm_ndvi_month`, `gm_ndvi_stack`): they report the request that starts to a `report` function, and stop with an error of class `rNDC_interrupted` when an `interrupt` function says so. Used by [rNDC.Shiny](https://github.com/LTER-LIFE/rNDC-Shiny) for its progress bar.
 
 ### Examples
 

@@ -7,9 +7,9 @@ Jupyter notebooks (R kernel) showing how to use rNDC. They need network access a
 | Notebook | What it shows | Tokens | Runtime |
 |---|---|---|---|
 | [`01_getting_started`](01_getting_started.ipynb) | Find datasets, define regions and dates of interest, search items and get metadata from *NatureDataCube*: `ndc_roi`, `ndc_trange`, `ndc_datasets`, `ndc_count`, `ndc_get` | `NDC_TOKEN` | ~1 min |
-| [`02_rasters`](02_rasters.ipynb) | Study sites, land use and nitrogen rasters for an area of interest: `ndc_sites`, `get_landuse_raster`, `get_nitrogen_raster` | `NDC_TOKEN` | ~1 min |
-| [`03_weather`](03_weather.ipynb) | KNMI weather data from *AgroDataCube*: `get_closest_meteostation`, `get_meteo_for_date`, `get_meteo_for_period`, `get_meteo_for_long_period` | `ADC_TOKEN` | ~30 s |
-| [`04_ndvi`](04_ndvi.ipynb) | Monthly average NDVI from *GroenMonitor*: `download_avg_ndvi_month`, `download_avg_ndvi_stack` | `NDC_TOKEN` (last section) | ~2 min |
+| [`02_rasters`](02_rasters.ipynb) | Study sites, land use and nitrogen rasters for an area of interest: `ndc_sites`, `ndc_landuse_raster`, `ndc_nitrogen_raster` | `NDC_TOKEN` | ~1 min |
+| [`03_weather`](03_weather.ipynb) | KNMI weather data from *AgroDataCube*: `adc_weather_station`, `adc_weather_date`, `adc_weather_period`, `adc_weather_long_period` | `ADC_TOKEN` | ~30 s |
+| [`04_ndvi`](04_ndvi.ipynb) | Monthly average NDVI from *GroenMonitor*: `gm_ndvi_month`, `gm_ndvi_stack` | `NDC_TOKEN` (last section) | ~2 min |
 
 ## Advanced: the raw interfaces
 
@@ -31,3 +31,10 @@ Rscript tools/run_notebooks.R 02_rasters 04_ndvi   # selected notebooks
 ```
 
 The same script runs weekly in GitHub Actions (see [`.github/workflows/live-checks.yaml`](../.github/workflows/live-checks.yaml)), to catch changes in the APIs.
+
+The saved outputs (text, messages and plots) are made with `evaluate`, since IRkernel is not installed in the development environment. To refresh them after a change, run the cells again and save the notebooks with the new outputs (a notebook is only written if all its cells ran, and never if a token is in an output):
+
+```sh
+Rscript tools/regenerate_notebooks.R                      # all notebooks
+Rscript tools/regenerate_notebooks.R 03_weather 04_ndvi   # selected notebooks
+```

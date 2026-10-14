@@ -5,14 +5,16 @@
 #' @param url character. Request URL.
 #' @param option character. Determines the type of request.
 #' @param params vector or list. List of named parameters.
-#' @param out_path character. Output path.
+#' @param output_path character. Output path.
+#' @param out_path Deprecated: use `output_path`.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
 #' @inheritParams ndc_get
-#' @returns The `httr` response. The file is written to `out_path`; an error is raised (and the file removed) if the request fails, e.g. when no coverage exists for the requested date.
+#' @returns The `httr` response. The file is written to `output_path`; an error is raised (and the file removed) if the request fails, e.g. when no coverage exists for the requested date.
 #' @export
 
-gm_get <- function(url, option = "NDVI", params, out_path = tempfile(), overwrite = TRUE,
-                   params_file = NULL, save_params = NULL) {
+gm_get <- function(url, option = "NDVI", params, output_path = tempfile(), overwrite = TRUE,
+                   params_file = NULL, save_params = NULL, out_path = NULL) {
+  if (!is.null(out_path)) output_path <- deprecated_argument(out_path, "out_path", "output_path", "gm_get")
   if (!is.null(params_file)) params_apply("gm_get", params_file)
   if (!is.null(save_params)) params_save_when_done("gm_get", save_params)
 
@@ -24,9 +26,9 @@ gm_get <- function(url, option = "NDVI", params, out_path = tempfile(), overwrit
   }
 
   # Download file
-  response <- GET(request_url, write_disk(out_path, overwrite = overwrite))
+  response <- GET(request_url, write_disk(output_path, overwrite = overwrite))
   if (httr::http_error(response)) {
-    on.exit(unlink(out_path), add = TRUE)  # remove the saved error body
+    on.exit(unlink(output_path), add = TRUE)  # remove the saved error body
     stop_for_http_error(response, "GroenMonitor")
   }
 

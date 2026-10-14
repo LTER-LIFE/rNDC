@@ -74,29 +74,29 @@ test_that("land use and nitrogen items exist for the study sites", {
 test_that("rasters can be downloaded and clipped", {
   skip_unless_live()
   site <- ndc_sites("loobos")
-  out_dir <- withr::local_tempdir()
-  landuse <- get_landuse_raster(site, year = 2024, out_dir = out_dir)
+  output_dir <- withr::local_tempdir()
+  landuse <- ndc_landuse_raster(site, year = 2024, output_dir = output_dir)
   expect_s4_class(landuse$stack, "SpatRaster")
-  nitrogen <- get_nitrogen_raster(site, year = 2025, out_dir = out_dir)
+  nitrogen <- ndc_nitrogen_raster(site, year = 2025, output_dir = output_dir)
   expect_equal(names(nitrogen$stack), c("ntot_2025", "nox_2025", "nh3_2025"))
 })
 
 test_that("AgroDataCube weather data is available", {
   skip_unless_live()
   poly <- "POLYGON((5.7 52.14, 5.79 52.14, 5.79 52.19, 5.7 52.19, 5.7 52.14))"
-  station <- get_closest_meteostation(poly, token = Sys.getenv("ADC_TOKEN"))
+  station <- adc_weather_station(poly, token = Sys.getenv("ADC_TOKEN"))
   expect_true(nzchar(station$closest_id))
-  day <- get_meteo_for_date(station$closest_id, "2025-07-15", token = Sys.getenv("ADC_TOKEN"))
+  day <- adc_weather_date(station$closest_id, "2025-07-15", token = Sys.getenv("ADC_TOKEN"))
   expect_s3_class(day, "sf")
 })
 
 test_that("GroenMonitor serves NDVI for a known date and rejects unknown ones", {
   skip_unless_live()
   p <- c(date = "20250715", xmin = 684613, xmax = 685907, ymin = 5763913, ymax = 5764822, format = "tiff")
-  res <- gm_get(url = gm_url("NDVI", p), out_path = withr::local_tempfile(fileext = ".tif"))
+  res <- gm_get(url = gm_url("NDVI", p), output_path = withr::local_tempfile(fileext = ".tif"))
   expect_equal(httr::status_code(res), 200L)
   p["date"] <- "20251001"
-  expect_error(gm_get(url = gm_url("NDVI", p), out_path = withr::local_tempfile(fileext = ".tif")), "HTTP 404")
+  expect_error(gm_get(url = gm_url("NDVI", p), output_path = withr::local_tempfile(fileext = ".tif")), "HTTP 404")
 })
 
 test_that("all pages of a search can be retrieved", {
@@ -121,7 +121,7 @@ test_that("monthly NDVI statistics are available for a project polygon", {
   skip_unless_live()
   lter <- ndc_get("lter", mode = "sf", all_pages = TRUE)
   poly <- lter[lter$name == "Loobos", ][1, ]
-  stats <- get_ndvi_stats(poly, "ndvi-lter", from = "2024-05-01", to = "2024-07-31")
+  stats <- ndc_ndvi_stats(poly, "ndvi-lter", trange = c("2024-05-01", "2024-07-31"))
   expect_gt(nrow(stats), 0)
   expect_setequal(unique(stats$ndc_id), as.character(poly$ndc_id))  # only the polygon itself
   expect_equal(anyDuplicated(stats$month), 0)

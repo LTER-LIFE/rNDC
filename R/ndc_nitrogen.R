@@ -25,16 +25,16 @@ nitrogen_controls_are_valid <- function(year, layers) {
   year_ok && layers_ok
 }
 
-nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
-                                      collection = NULL,
+nitrogen_collect_metadata <- function(roi, token, endpoint = ndc_endpoint(),
+                                      collections = NULL,
                                       layers = nitrogen_layer_choices,
                                       year = NULL,
                                       limit = 100) {
   # Each nitrogen layer lives in its own collection (named after the layer)
-  collections <- if (is.null(collection)) layers else collection
+  collections <- if (is.null(collections)) layers else collections
   meta <- dplyr::bind_rows(lapply(collections, function(col) {
     stac_collect_metadata(
-      aoi = aoi,
+      roi = roi,
       token = token,
       endpoint = endpoint,
       collection = col,
@@ -73,15 +73,15 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
 
 #' Download Nitrogen raster layers for an area of interest
 #'
-#' @param aoi sf, sfc, numeric or character. Area of interest, see [ndc_roi()]: an sf/sfc object, a
+#' @param roi sf, sfc, numeric or character. Region of interest, see [ndc_roi()]: an sf/sfc object, a
 #'   bounding box (`xmin, ymin, xmax, ymax`, EPSG:4326) or a path to a file with the geometry.
 #' @param year Year to retrieve (e.g. "2024", "2025", "2040").
 #' @param layers Character vector of layer names. Defaults to all available
 #'   nitrogen layers (\code{nitrogen_layer_choices}).
 #' @param token API token (defaults to the NDC_TOKEN env var).
 #' @param endpoint STAC endpoint.
-#' @param collection STAC collection(s). By default, one collection per layer (`ntot`, `nox`, `nh3`).
-#' @param out_dir Output directory for downloaded rasters.
+#' @param collections STAC collection(s). By default, one collection per layer (`ntot`, `nox`, `nh3`).
+#' @param output_dir Output directory for downloaded rasters.
 #' @param overwrite Overwrite existing files.
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
@@ -90,17 +90,17 @@ nitrogen_collect_metadata <- function(aoi, token, endpoint = ndc_endpoint(),
 #'   `SpatRaster` with one layer per raster), `files` (the paths of the downloaded files) and `metadata` (a
 #'   tibble with one row per layer and year). An error is raised if no item matches.
 #' @export
-get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, token = Sys.getenv("NDC_TOKEN"),
+ndc_nitrogen_raster <- function(roi, year, layers = nitrogen_layer_choices, token = Sys.getenv("NDC_TOKEN"),
                                 endpoint = ndc_endpoint(),
-                                collection = NULL,
-                                out_dir = tempdir(),
+                                collections = NULL,
+                                output_dir = tempdir(),
                                 overwrite = TRUE,
                                 limit = 100,
                                 file_prefix = NULL,
                                 params_file = NULL,
                                 save_params = NULL) {
-  if (!is.null(params_file)) params_apply("get_nitrogen_raster", params_file)
-  if (!is.null(save_params)) params_save_when_done("get_nitrogen_raster", save_params)
+  if (!is.null(params_file)) params_apply("ndc_nitrogen_raster", params_file)
+  if (!is.null(save_params)) params_save_when_done("ndc_nitrogen_raster", save_params)
   year <- nitrogen_normalize_year(year)
   layers <- nitrogen_clean_layer_name(layers)
 
@@ -109,10 +109,10 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
   }
 
   meta <- nitrogen_collect_metadata(
-    aoi = aoi,
+    roi = roi,
     token = token,
     endpoint = endpoint,
-    collection = collection,
+    collections = collections,
     layers = layers,
     year = year,
     limit = limit
@@ -121,11 +121,11 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
   headers <- stac_make_headers(token)
   prefix <- stac_make_file_prefix(file_prefix)
 
-  download_dir <- if (is.null(out_dir) || !nzchar(as.character(out_dir))) tempdir() else out_dir
+  download_dir <- if (is.null(output_dir) || !nzchar(as.character(output_dir))) tempdir() else output_dir
   dir.create(download_dir, recursive = TRUE, showWarnings = FALSE)
 
   # Only request the area of interest from the WCS server (not the full raster)
-  subset_suffix <- stac_wcs_subset_suffix(aoi, target_crs = nitrogen_subset_crs)
+  subset_suffix <- stac_wcs_subset_suffix(roi, target_crs = nitrogen_subset_crs)
 
   downloaded <- list()
   clipped <- list()
@@ -140,7 +140,7 @@ get_nitrogen_raster <- function(aoi, year, layers = nitrogen_layer_choices, toke
                       overwrite = overwrite)
 
     r <- terra::rast(fpath)
-    r <- stac_clip_raster_to_aoi(r, aoi)
+    r <- stac_clip_raster_to_aoi(r, roi)
     names(r) <- nm
 
     downloaded[[nm]] <- fpath

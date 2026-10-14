@@ -28,7 +28,7 @@ test_that("a search can be saved, and the file describes it", {
 
   p <- read_file(f)
   expect_equal(p$schema, "rNDC-ndc_get/1")
-  expect_equal(unlist(p$collection), "coll")
+  expect_equal(unlist(p$collections), "coll")
   expect_equal(p$roi$type, "Polygon")
   expect_equal(p$trange, "2024-01-01T00:00:00Z/2024-02-01T00:00:00Z")
   expect_equal(p$limit, 50)
@@ -48,7 +48,7 @@ test_that("the file never holds the token, nor where files go", {
   ndc_get("coll", token = "t", output_dir = "/some/where", overwrite = FALSE, save_params = f)
   text <- paste(readLines(f), collapse = "\n")
   expect_false(grepl("token|Bearer|output_dir|overwrite|/some/where", text, ignore.case = TRUE))
-  expect_named(read_file(f), c("schema", "created", "rNDC", "endpoint", "collection", "limit", "mode", "all_pages", "matched"),
+  expect_named(read_file(f), c("schema", "created", "rNDC", "endpoint", "collections", "limit", "mode", "all_pages", "matched"),
                ignore.order = TRUE)
 })
 
@@ -125,7 +125,7 @@ test_that("nothing is written when the search fails, and the token is still need
   local_stac_api()
   ndc_get("coll", token = "t")   # no file asked for: none made
   expect_false(file.exists(f))
-  writeLines('{"schema": "rNDC-ndc_get/1", "collection": ["coll"]}', f)
+  writeLines('{"schema": "rNDC-ndc_get/1", "collections": ["coll"]}', f)
   expect_error(ndc_get(params_file = f, token = ""), "token is missing")
 })
 
@@ -138,7 +138,7 @@ test_that("a file in a folder that does not exist is a clear error", {
 test_that("only the fields that make up the search are taken, the others are ignored with a warning", {
   local_stac_api()
   f <- withr::local_tempfile(fileext = ".json")
-  writeLines(paste0('{"schema": "rNDC-ndc_get/1", "collection": ["coll"], "limit": 9, "token": "secret", ',
+  writeLines(paste0('{"schema": "rNDC-ndc_get/1", "collections": ["coll"], "limit": 9, "token": "secret", ',
                     '"output_dir": "/etc", "overwrite": true, "extra": 1}'), f)
   expect_warning(res <- ndc_get(params_file = f, token = "t"), "token, output_dir, overwrite, extra")
   expect_equal(last_request_body()$limit, 9)
@@ -148,10 +148,10 @@ test_that("only the fields that make up the search are taken, the others are ign
 test_that("a file for another endpoint is run at the current one, with a warning", {
   local_stac_api()
   f <- withr::local_tempfile(fileext = ".json")
-  writeLines('{"schema": "rNDC-ndc_get/1", "endpoint": "https://elsewhere.org/api/", "collection": ["coll"]}', f)
+  writeLines('{"schema": "rNDC-ndc_get/1", "endpoint": "https://elsewhere.org/api/", "collections": ["coll"]}', f)
   expect_warning(ndc_get(params_file = f, token = "t"), "another endpoint \\(https://elsewhere.org/api/\\)")
   expect_no_warning({
-    writeLines('{"schema": "rNDC-ndc_get/1", "endpoint": "https://example.org/api", "collection": ["coll"]}', f)
+    writeLines('{"schema": "rNDC-ndc_get/1", "endpoint": "https://example.org/api", "collections": ["coll"]}', f)
     ndc_get(params_file = f, token = "t")   # a slash more or less is the same endpoint
   })
 })
@@ -162,20 +162,20 @@ test_that("files that are not the parameters of a search are refused", {
   expect_error(ndc_get(params_file = file.path(tempdir(), "none.json"), token = "t"), "not found")
   writeLines("{not json", f)
   expect_error(ndc_get(params_file = f, token = "t"), "not valid JSON")
-  writeLines('{"collection": ["coll"]}', f)
+  writeLines('{"collections": ["coll"]}', f)
   expect_error(ndc_get(params_file = f, token = "t"), "not a file with the parameters of ndc_get")
-  writeLines('{"schema": "rNDC-ndc_get/2", "collection": ["coll"]}', f)
+  writeLines('{"schema": "rNDC-ndc_get/2", "collections": ["coll"]}', f)
   expect_error(ndc_get(params_file = f, token = "t"), "newer version of rNDC")
   writeLines('[1, 2]', f)
   expect_error(ndc_get(params_file = f, token = "t"), "does not hold the parameters")
 
   bad <- function(body) { writeLines(paste0('{"schema": "rNDC-ndc_get/1", ', body, '}'), f); ndc_get(params_file = f, token = "t") }
-  expect_error(bad('"collection": [1]'), "`collection`")
-  expect_error(bad('"collection": ["a"], "limit": 0'), "`limit`")
-  expect_error(bad('"collection": ["a"], "limit": "many"'), "`limit`")
-  expect_error(bad('"collection": ["a"], "all_pages": "yes"'), "`all_pages`")
-  expect_error(bad('"collection": ["a"], "trange": 5'), "`trange`")
-  expect_error(bad('"collection": ["a"], "roi": {"type": "Nope"}'), "`roi`")
-  expect_error(bad('"collection": ["a"], "mode": "teleport"'), "should be one of")
-  expect_error(bad('"limit": 5'), "collection")                      # nothing to search
+  expect_error(bad('"collections": [1]'), "`collections`")
+  expect_error(bad('"collections": ["a"], "limit": 0'), "`limit`")
+  expect_error(bad('"collections": ["a"], "limit": "many"'), "`limit`")
+  expect_error(bad('"collections": ["a"], "all_pages": "yes"'), "`all_pages`")
+  expect_error(bad('"collections": ["a"], "trange": 5'), "`trange`")
+  expect_error(bad('"collections": ["a"], "roi": {"type": "Nope"}'), "`roi`")
+  expect_error(bad('"collections": ["a"], "mode": "teleport"'), "should be one of")
+  expect_error(bad('"limit": 5'), "collections")                      # nothing to search
 })

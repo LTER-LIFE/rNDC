@@ -13,13 +13,13 @@ landuse_normalize_year <- function(year) {
   if (is.na(year)) NA_integer_ else year
 }
 
-landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
+landuse_collect_metadata <- function(roi, token = Sys.getenv("NDC_TOKEN"),
                                      endpoint = ndc_endpoint(),
                                      collection = landuse_collection,
                                      limit = 100,
                                      year = NULL) {
   meta <- stac_collect_metadata(
-    aoi = aoi,
+    roi = roi,
     token = token,
     endpoint = endpoint,
     collection = collection,
@@ -40,12 +40,12 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
 
 #' Download Land Use raster for an area of interest
 #'
-#' @param aoi sf, sfc, numeric or character. Area of interest, see [ndc_roi()]: an sf/sfc object, a
+#' @param roi sf, sfc, numeric or character. Region of interest, see [ndc_roi()]: an sf/sfc object, a
 #'   bounding box (`xmin, ymin, xmax, ymax`, EPSG:4326) or a path to a file with the geometry.
 #' @param year Year to retrieve (defaults to \code{landuse_default_year}).
 #' @param token API token (defaults to the NDC_TOKEN env var).
 #' @param endpoint,collection STAC endpoint and collection.
-#' @param out_dir Output directory for the downloaded raster.
+#' @param output_dir Output directory for the downloaded raster.
 #' @param overwrite Overwrite existing files.
 #' @param limit Max STAC items to fetch.
 #' @param file_prefix Optional file prefix.
@@ -55,12 +55,12 @@ landuse_collect_metadata <- function(aoi, token = Sys.getenv("NDC_TOKEN"),
 #'   per raster), `files` (the paths of the downloaded files) and `metadata` (a tibble with one row per STAC
 #'   item). An error is raised if no item matches the area and year.
 #' @export
-get_landuse_raster <- function(aoi,
+ndc_landuse_raster <- function(roi,
                                year = landuse_default_year,
                                token = Sys.getenv("NDC_TOKEN"),
                                endpoint = ndc_endpoint(),
                                collection = landuse_collection,
-                               out_dir = tempdir(),
+                               output_dir = tempdir(),
                                overwrite = TRUE,
                                limit = 100,
                                file_prefix = NULL,
@@ -68,15 +68,15 @@ get_landuse_raster <- function(aoi,
                                min_file_size = landuse_min_file_size,
                                params_file = NULL,
                                save_params = NULL) {
-  if (!is.null(params_file)) params_apply("get_landuse_raster", params_file)
-  if (!is.null(save_params)) params_save_when_done("get_landuse_raster", save_params)
+  if (!is.null(params_file)) params_apply("ndc_landuse_raster", params_file)
+  if (!is.null(save_params)) params_save_when_done("ndc_landuse_raster", save_params)
   year <- landuse_normalize_year(year)
   if (is.na(year)) {
     stop("Please provide a valid year for Land Use.", call. = FALSE)
   }
 
   meta <- landuse_collect_metadata(
-    aoi = aoi,
+    roi = roi,
     token = token,
     endpoint = endpoint,
     collection = collection,
@@ -99,10 +99,10 @@ get_landuse_raster <- function(aoi,
   headers <- stac_make_headers(token)
   prefix <- stac_make_file_prefix(file_prefix)
 
-  download_dir <- if (is.null(out_dir) || !nzchar(as.character(out_dir))) tempdir() else out_dir
+  download_dir <- if (is.null(output_dir) || !nzchar(as.character(output_dir))) tempdir() else output_dir
   dir.create(download_dir, recursive = TRUE, showWarnings = FALSE)
 
-  subset_suffix <- stac_wcs_subset_suffix(aoi, target_crs = subset_crs, x_name = "E", y_name = "N")
+  subset_suffix <- stac_wcs_subset_suffix(roi, target_crs = subset_crs, x_name = "E", y_name = "N")
 
   downloaded <- list()
   clipped <- list()
@@ -145,7 +145,7 @@ get_landuse_raster <- function(aoi,
     }
 
     r <- terra::rast(fpath)
-    r <- stac_clip_raster_to_aoi(r, aoi)
+    r <- stac_clip_raster_to_aoi(r, roi)
     names(r) <- base_nm
 
     downloaded[[base_nm]] <- fpath

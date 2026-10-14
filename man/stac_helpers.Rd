@@ -22,26 +22,33 @@ stac_keywords_to_vec(x)
 stac_feature_meta(feat, asset_name = "wcs")
 
 stac_collect_metadata(
-  aoi,
+  roi,
   token,
   endpoint,
   collection,
   asset_name = "wcs",
   limit = 100,
-  trange = NULL
+  trange = NULL,
+  aoi = NULL
 )
 
 stac_year_trange(year)
 
-stac_clip_raster_to_aoi(r, aoi)
+stac_clip_raster_to_aoi(r, roi, aoi = NULL)
 
 stac_make_file_prefix(x)
 
 stac_build_stack(clipped)
 
-stac_bbox_in_crs(aoi, target_crs = 32631L)
+stac_bbox_in_crs(roi, target_crs = 32631L)
 
-stac_wcs_subset_suffix(aoi, target_crs = 32631L, x_name = "E", y_name = "N")
+stac_wcs_subset_suffix(
+  roi,
+  target_crs = 32631L,
+  x_name = "E",
+  y_name = "N",
+  aoi = NULL
+)
 
 stac_download_one(
   href,
@@ -61,13 +68,15 @@ stac_download_one(
 
 \item{asset_name}{character. Name of the STAC asset holding the raster URL.}
 
-\item{aoi}{sf, sfc or numeric. Area of interest, normalised with \code{\link[=ndc_roi]{ndc_roi()}}.}
+\item{roi}{sf, sfc or numeric. Region of interest, normalised with \code{\link[=ndc_roi]{ndc_roi()}}.}
 
 \item{endpoint, collection}{character. STAC endpoint and collection ID.}
 
 \item{limit}{integer. Maximum number of STAC items per page.}
 
 \item{trange}{Date, POSIXct or character. Optional time range of the search, see \code{\link[=ndc_trange]{ndc_trange()}}.}
+
+\item{aoi}{Deprecated: use \code{roi}.}
 
 \item{year}{integer or character. Year(s) to build a time range from; a range from the first day of the
 earliest to the last day of the latest.}
@@ -101,7 +110,7 @@ Depends on the function: \code{stac_make_headers()} returns request headers;
 \code{stac_build_stack()} a \code{SpatRaster} (or \code{NULL}).
 }
 \description{
-Building blocks shared by the thematic raster functions (\code{\link[=get_landuse_raster]{get_landuse_raster()}},
-\code{\link[=get_nitrogen_raster]{get_nitrogen_raster()}}): querying STAC items, downloading WCS subsets and
-clipping rasters to an area of interest.
+Building blocks shared by the thematic raster functions (\code{\link[=ndc_landuse_raster]{ndc_landuse_raster()}},
+\code{\link[=ndc_nitrogen_raster]{ndc_nitrogen_raster()}}): querying STAC items, downloading WCS subsets and
+clipping rasters to a region of interest.
 }

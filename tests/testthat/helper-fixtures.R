@@ -163,10 +163,10 @@ http_error <- function(status) {
 
 # a fake gm_get that writes a small GeoTIFF, as the WCS of GroenMonitor would; the days in `missing` have no coverage
 fake_ndvi_download <- function(missing = character(0)) {
-  function(url, option, params, out_path, overwrite = TRUE) {
+  function(url, option, params, output_path, overwrite = TRUE) {
     if (any(vapply(missing, grepl, NA, x = url, fixed = TRUE))) stop(http_error(404))
     terra::writeRaster(terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 1, ymin = 0, ymax = 1, vals = c(0.2, 0.4, 0.6, 0.8)),
-                       out_path, overwrite = TRUE)
+                       output_path, overwrite = TRUE)
     invisible(NULL)
   }
 }
@@ -200,7 +200,7 @@ read_file <- function(f) jsonlite::fromJSON(f, simplifyVector = FALSE)
 # A file with the parameters must not hold the token nor where files go
 expect_no_secrets <- function(f) {
   text <- paste(readLines(f), collapse = "\n")
-  testthat::expect_false(grepl("token|Bearer|out_dir|out_path|file_prefix|overwrite|SECRET", text, ignore.case = TRUE))
+  testthat::expect_false(grepl("token|Bearer|out_dir|out_path|output_dir|output_path|file_prefix|overwrite|SECRET", text, ignore.case = TRUE))
 }
 
 meteo_url <- function(from, to) {

@@ -25,7 +25,7 @@
 #' @export
 stac_availability <- function(collections, roi = NULL, token = Sys.getenv("NDC_TOKEN"), limit = 500L, trange = NULL) {
   collections <- unique(as.character(collections))
-  items <- ndc_get(collection = collections, roi = roi, trange = trange, limit = limit, token = token, mode = "items")
+  items <- ndc_get(collections = collections, roi = roi, trange = trange, limit = limit, token = token, mode = "items")
 
   text <- function(x) if (is.null(x)) NA_character_ else as.character(x)[1]
   features <- items$features

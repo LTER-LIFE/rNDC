@@ -8,10 +8,11 @@ gm_get(
   url,
   option = "NDVI",
   params,
-  out_path = tempfile(),
+  output_path = tempfile(),
   overwrite = TRUE,
   params_file = NULL,
-  save_params = NULL
+  save_params = NULL,
+  out_path = NULL
 )
 }
 \arguments{
@@ -21,7 +22,7 @@ gm_get(
 
 \item{params}{vector or list. List of named parameters.}
 
-\item{out_path}{character. Output path.}
+\item{output_path}{character. Output path.}
 
 \item{overwrite}{boolean. If \code{TRUE}, overwrite file.}
 
@@ -31,9 +32,11 @@ give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the are
 
 \item{save_params}{character. Optional path of a JSON file to write the parameters to, once the function has
 succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
+
+\item{out_path}{Deprecated: use \code{output_path}.}
 }
 \value{
-The \code{httr} response. The file is written to \code{out_path}; an error is raised (and the file removed) if the request fails, e.g. when no coverage exists for the requested date.
+The \code{httr} response. The file is written to \code{output_path}; an error is raised (and the file removed) if the request fails, e.g. when no coverage exists for the requested date.
 }
 \description{
 Wrapper to get data from the \emph{GroenMonitor} WCS server.

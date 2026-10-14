@@ -3,10 +3,11 @@
 
 #' @rdname stac_helpers
 #' @export
-stac_clip_raster_to_aoi <- function(r, aoi) {
+stac_clip_raster_to_aoi <- function(r, roi, aoi = NULL) {
+  if (!is.null(aoi)) roi <- deprecated_argument(aoi, "aoi", "roi", "stac_clip_raster_to_aoi")
   if (is.null(r)) return(NULL)
 
-  aoi_vect <- terra::vect(ndc_roi(aoi))
+  aoi_vect <- terra::vect(ndc_roi(roi))
   r_crs <- terra::crs(r)
   if (is.na(r_crs) || !nzchar(r_crs)) {
     stop("Downloaded raster has no CRS, so it cannot be clipped safely.", call. = FALSE)

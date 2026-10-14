@@ -1,6 +1,6 @@
 # The weather functions of the AgroDataCube: the closest station, a day, a period, a long period, and the split of a range.
 
-test_that("get_closest_meteostation picks the nearest station", {
+test_that("adc_weather_station picks the nearest station", {
   with_adc_stubs()
   webmockr::stub_request("get", uri_regex = "agrodatacube.wur.nl/api/v2/rest/meteostations") |>
     webmockr::to_return(
@@ -8,15 +8,15 @@ test_that("get_closest_meteostation picks the nearest station", {
                             features = list(station_feature(1, 4.9, 52.4), station_feature(2, 6.5, 53.2)))),
       headers = json_header)
   poly <- "POLYGON((6.4 53.1, 6.6 53.1, 6.6 53.3, 6.4 53.3, 6.4 53.1))"
-  res <- get_closest_meteostation(poly, token = "t")
+  res <- adc_weather_station(poly, token = "t")
   expect_equal(res$closest_id, "2")
   expect_length(res$distances, 2)
 
   # the study area can be anything that ndc_roi() accepts, in any CRS
   area <- sf::st_transform(sf::st_as_sf(sf::st_as_sfc(poly, crs = 4326)), 28992)
-  expect_equal(get_closest_meteostation(area, token = "t")$closest_id, "2")
-  expect_equal(get_closest_meteostation(c(6.4, 53.1, 6.6, 53.3), token = "t")$closest_id, "2")
-  expect_error(get_closest_meteostation("not a polygon", token = "t"), "Invalid WKT")
+  expect_equal(adc_weather_station(area, token = "t")$closest_id, "2")
+  expect_equal(adc_weather_station(c(6.4, 53.1, 6.6, 53.3), token = "t")$closest_id, "2")
+  expect_error(adc_weather_station("not a polygon", token = "t"), "Invalid WKT")
 })
 
 test_that("meteo functions fetch data, warn on empty results and surface HTTP errors", {
@@ -33,26 +33,26 @@ test_that("meteo functions fetch data, warn on empty results and surface HTTP er
   webmockr::stub_request("get", meteo_url("20240301", "20240302")) |>
     webmockr::to_return(body = "{}", status = 500)
 
-  res <- get_meteo_for_period(260, "2024-01-01", "2024-01-02", token = "t")
+  res <- adc_weather_period(260, c("2024-01-01", "2024-01-02"), token = "t")
   expect_s3_class(res, "sf")
   expect_equal(nrow(res), 2)
-  expect_warning(expect_null(get_meteo_for_period(260, "2024-02-01", "2024-02-02", token = "t")),
+  expect_warning(expect_null(adc_weather_period(260, c("2024-02-01", "2024-02-02"), token = "t")),
                  "No meteo data")
-  expect_error(get_meteo_for_period(260, "2024-03-01", "2024-03-02", token = "t"), "500")
+  expect_error(adc_weather_period(260, c("2024-03-01", "2024-03-02"), token = "t"), "500")
 })
 
-test_that("get_meteo_for_long_period combines the chunks", {
+test_that("adc_weather_long_period combines the chunks", {
   calls <- 0
-  local_mocked_bindings(get_meteo_for_period = function(...) {
+  local_mocked_bindings(adc_weather_period = function(...) {
     calls <<- calls + 1
     sf::st_sf(day = calls, geometry = sf::st_sfc(sf::st_point(c(5, 52)), crs = 4326))
   })
-  res <- suppressMessages(get_meteo_for_long_period(1, "2024-01-01", "2024-01-20", token = "t", by_days = 7))
+  res <- suppressMessages(adc_weather_long_period(1, c("2024-01-01", "2024-01-20"), token = "t", by_days = 7))
   expect_equal(calls, 3)
   expect_equal(nrow(res), 3)
 })
 
-test_that("get_meteo_for_date uses the stationid/date parameters", {
+test_that("adc_weather_date uses the station and date parameters", {
   with_adc_stubs()
   url <- paste0("https://agrodatacube.wur.nl/api/v2/rest/meteodata?output_epsg=4326&stationid=210",
                 "&date=20160101&page_size=500&page_offset=0")
@@ -63,10 +63,10 @@ test_that("get_meteo_for_date uses the stationid/date parameters", {
                                                  geometry = list(type = "Point", coordinates = c(5, 52)),
                                                  properties = list(datum = "2016-01-01", mean_temperature = 5.6))))),
       headers = json_header)
-  res <- get_meteo_for_date(210, "2016-01-01", token = "t")
+  res <- adc_weather_date(210, "2016-01-01", token = "t")
   expect_s3_class(res, "sf")
   expect_equal(res$mean_temperature, 5.6)
-  expect_error(get_meteo_for_date(210, "not a date", token = "t"), "date must be")
+  expect_error(adc_weather_date(210, "not a date", token = "t"), "date must be")
 })
 
 test_that("split_date_range covers the range without overlap", {

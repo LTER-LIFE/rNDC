@@ -16,7 +16,7 @@ ndc_count <- function(s = NULL, collection = NULL, roi = NULL, trange = NULL,
                       limit = 100, token = Sys.getenv("NDC_TOKEN")) {
   
   if (missing(s)) {
-    s <- ndc_get(collection = collection, roi = ndc_roi(roi), trange = trange,
+    s <- ndc_get(collections = collection, roi = ndc_roi(roi), trange = trange,
                  limit = limit, token = token, mode = "items", progress = FALSE)
   }
 

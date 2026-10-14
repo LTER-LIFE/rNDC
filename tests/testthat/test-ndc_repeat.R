@@ -4,75 +4,75 @@ tmp_json <- function(env = parent.frame()) withr::local_tempfile(fileext = ".jso
 
 test_that("every function with parameters in a file has the arguments that the file is made of", {
   expect_setequal(names(params_specs),
-                  c("ndc_get", "get_landuse_raster", "get_nitrogen_raster", "get_ndvi_stats", "download_avg_ndvi_month",
-                    "download_avg_ndvi_stack", "get_closest_meteostation", "get_meteo_for_date", "get_meteo_for_period",
-                    "get_meteo_for_long_period", "adc_get", "adc_get_all", "gm_get"))
+                  c("ndc_get", "ndc_landuse_raster", "ndc_nitrogen_raster", "ndc_ndvi_stats", "gm_ndvi_month",
+                    "gm_ndvi_stack", "adc_weather_station", "adc_weather_date", "adc_weather_period",
+                    "adc_weather_long_period", "adc_get", "adc_get_all", "gm_get"))
   for (name in names(params_specs)) {
     spec <- params_specs[[name]]
     formal_names <- names(formals(get(name, envir = asNamespace("rNDC"))))
     expect_true(all(names(spec$args) %in% formal_names), info = paste(name, ": arguments of the file are not arguments"))
     expect_true(all(c("params_file", "save_params") %in% formal_names), info = name)
     # what must not be in a file is not an argument of the file
-    expect_false(any(c("token", "out_dir", "out_path", "output_dir", "overwrite", "file_prefix", "endpoint") %in%
+    expect_false(any(c("token", "out_dir", "out_path", "output_dir", "output_path", "overwrite", "file_prefix", "endpoint") %in%
                        names(spec$args)), info = name)
   }
 })
 
-test_that("get_landuse_raster records its parameters, and repeats them", {
+test_that("ndc_landuse_raster records its parameters, and repeats them", {
   local_stac_api(list(stac_item("a", date = "2024-01-01")))
   urls <- character()
   local_mocked_bindings(stac_download_one = function(href, ...) { urls <<- c(urls, href); mock_download(href, ...) })
   f <- tmp_json()
-  first <- get_landuse_raster(square_4326(), year = 2024, token = "t", out_dir = withr::local_tempdir(),
+  first <- ndc_landuse_raster(square_4326(), year = 2024, token = "t", output_dir = withr::local_tempdir(),
                               min_file_size = 0, limit = 50, save_params = f)
   p <- read_file(f)
-  expect_equal(p$schema, "rNDC-get_landuse_raster/1")
-  expect_equal(p$aoi$type, "Polygon")
+  expect_equal(p$schema, "rNDC-ndc_landuse_raster/1")
+  expect_equal(p$roi$type, "Polygon")
   expect_equal(list(p$year, p$collection, p$limit, p$subset_crs, p$min_file_size), list(2024, "lgn", 50, 32631, 0))
   expect_equal(p$endpoint, "https://example.org/api/")
   expect_no_secrets(f)
 
   first_urls <- urls
   urls <- character()
-  again <- get_landuse_raster(params_file = f, token = "t", out_dir = withr::local_tempdir())
+  again <- ndc_landuse_raster(params_file = f, token = "t", output_dir = withr::local_tempdir())
   expect_equal(urls, first_urls)                       # the same area, subset and file
   expect_equal(names(again$stack), names(first$stack))
 
-  expect_error(get_landuse_raster(params_file = f, year = 1999, token = "t"), "year 1999")   # the call overrides the file
+  expect_error(ndc_landuse_raster(params_file = f, year = 1999, token = "t"), "year 1999")   # the call overrides the file
 })
 
-test_that("get_nitrogen_raster records its parameters, and repeats them with other ones", {
+test_that("ndc_nitrogen_raster records its parameters, and repeats them with other ones", {
   local_stac_api(nitrogen_items())
   urls <- character()
   local_mocked_bindings(stac_download_one = function(href, ...) { urls <<- c(urls, href); mock_download(href, ...) })
   f <- tmp_json()
-  first <- get_nitrogen_raster(square_4326(), "2024", token = "t", out_dir = withr::local_tempdir(), save_params = f)
+  first <- ndc_nitrogen_raster(square_4326(), "2024", token = "t", output_dir = withr::local_tempdir(), save_params = f)
   p <- read_file(f)
-  expect_equal(p$schema, "rNDC-get_nitrogen_raster/1")
+  expect_equal(p$schema, "rNDC-ndc_nitrogen_raster/1")
   expect_equal(c(p$year, unlist(p$layers)), c("2024", "ntot", "nox", "nh3"))        # the defaults are written too
-  expect_equal(p$aoi$type, "Polygon")
+  expect_equal(p$roi$type, "Polygon")
   expect_no_secrets(f)
 
-  again <- get_nitrogen_raster(params_file = f, token = "t", out_dir = withr::local_tempdir())
+  again <- ndc_nitrogen_raster(params_file = f, token = "t", output_dir = withr::local_tempdir())
   expect_equal(names(again$stack), names(first$stack))
 
-  other <- get_nitrogen_raster(params_file = f, year = "2025", layers = "ntot", token = "t", out_dir = withr::local_tempdir())
+  other <- ndc_nitrogen_raster(params_file = f, year = "2025", layers = "ntot", token = "t", output_dir = withr::local_tempdir())
   expect_equal(names(other$stack), "ntot_2025")
 })
 
-test_that("get_ndvi_stats records the polygons it kept, so that a file without the area's columns repeats it", {
+test_that("ndc_ndvi_stats records the polygons it kept, so that a file without the area's columns repeats it", {
   local_stac_api(items = ndvi_items())
   f <- tmp_json()
-  first <- get_ndvi_stats(square(ndc_id = "1"), "ndvi-lter", from = "2024-05-01", to = "2024-06-30", token = "t",
+  first <- ndc_ndvi_stats(square(ndc_id = "1"), "ndvi-lter", trange = c("2024-05-01", "2024-06-30"), token = "t",
                           save_params = f)
   p <- read_file(f)
-  expect_equal(p$schema, "rNDC-get_ndvi_stats/1")
-  expect_equal(c(p$collection, p$from, p$to, unlist(p$ndc_id)), c("ndvi-lter", "2024-05-01", "2024-06-30", "1"))
+  expect_equal(p$schema, "rNDC-ndc_ndvi_stats/1")
+  expect_equal(c(p$collection, p$trange, unlist(p$ndc_id)), c("ndvi-lter", "2024-05-01T00:00:00Z/2024-06-30T00:00:00Z", "1"))
   expect_no_secrets(f)
 
-  again <- get_ndvi_stats(params_file = f, token = "t")      # the area is a bare geometry now: ndc_id comes from the file
+  again <- ndc_ndvi_stats(params_file = f, token = "t")      # the area is a bare geometry now: ndc_id comes from the file
   expect_identical(again, first)
-  expect_equal(unique(get_ndvi_stats(params_file = f, ndc_id = c("1", "2"), token = "t")$ndc_id), c("1", "2"))
+  expect_equal(unique(ndc_ndvi_stats(params_file = f, ndc_id = c("1", "2"), token = "t")$ndc_id), c("1", "2"))
 })
 
 test_that("the NDVI downloads record their parameters, and repeat them", {
@@ -82,24 +82,24 @@ test_that("the NDVI downloads record their parameters, and repeat them", {
   poly <- square_4326(0.1, 0.1, 0.9, 0.9)
   f <- tmp_json()
 
-  first <- suppressMessages(download_avg_ndvi_month(poly, 2024, 2, save_params = f))
+  first <- suppressMessages(gm_ndvi_month(poly, 2024, 2, save_params = f))
   p <- read_file(f)
-  expect_equal(p$schema, "rNDC-download_avg_ndvi_month/1")
+  expect_equal(p$schema, "rNDC-gm_ndvi_month/1")
   expect_equal(list(p$year, p$month, p$epsg), list(2024, 2, 32631))
-  expect_equal(p$poly$type, "Polygon")
+  expect_equal(p$roi$type, "Polygon")
   expect_null(p$endpoint)                               # not a NatureDataCube function
   expect_no_secrets(f)
   first_urls <- urls; urls <- character()
-  again <- suppressMessages(download_avg_ndvi_month(params_file = f))
+  again <- suppressMessages(gm_ndvi_month(params_file = f))
   expect_equal(urls, first_urls)
   expect_equal(names(again), names(first))
 
   g <- tmp_json(); urls <- character()
-  stack <- suppressMessages(download_avg_ndvi_stack(poly, 2024, 1, 2024, 2, save_params = g))
+  stack <- suppressMessages(gm_ndvi_stack(poly, c("2024-01-01", "2024-02-29"), save_params = g))
   q <- read_file(g)
-  expect_equal(list(q$start_year, q$start_month, q$end_year, q$end_month), list(2024, 1, 2024, 2))
+  expect_equal(q$trange, "2024-01-01T00:00:00Z/2024-02-29T00:00:00Z")
   first_urls <- urls; urls <- character()
-  expect_equal(names(suppressMessages(download_avg_ndvi_stack(params_file = g))), names(stack))
+  expect_equal(names(suppressMessages(gm_ndvi_stack(params_file = g))), names(stack))
   expect_equal(urls, first_urls)
 })
 
@@ -116,45 +116,45 @@ test_that("the weather functions record their parameters, and repeat them", {
                         headers = json_header)
 
   f <- tmp_json()
-  first <- get_meteo_for_period(260, as.Date("2024-01-01"), "2024-01-02", token = "SECRET-1", save_params = f)
+  first <- adc_weather_period(260, c(as.Date("2024-01-01"), as.Date("2024-01-02")), token = "SECRET-1", save_params = f)
   p <- read_file(f)
-  expect_equal(p$schema, "rNDC-get_meteo_for_period/1")
-  expect_equal(list(p$meteostation, p$fromdate, p$todate, p$page_size), list(260, "2024-01-01", "2024-01-02", 500))
+  expect_equal(p$schema, "rNDC-adc_weather_period/1")
+  expect_equal(list(p$station, p$trange, p$page_size), list(260, "2024-01-01T00:00:00Z/2024-01-02T00:00:00Z", 500))
   expect_no_secrets(f)
-  expect_identical(get_meteo_for_period(params_file = f, token = "SECRET-1"), first)
+  expect_identical(adc_weather_period(params_file = f, token = "SECRET-1"), first)
 
   g <- tmp_json()
-  day <- get_meteo_for_date("210", "2016-01-01", token = "SECRET-1", save_params = g)
-  expect_equal(read_file(g)$stationid, "210")
+  day <- adc_weather_date("210", "2016-01-01", token = "SECRET-1", save_params = g)
+  expect_equal(read_file(g)$station, "210")
   expect_no_secrets(g)
-  expect_identical(get_meteo_for_date(params_file = g, token = "SECRET-1"), day)
+  expect_identical(adc_weather_date(params_file = g, token = "SECRET-1"), day)
 
   # the token comes from the environment when it is not given (the file never has it)
   withr::local_envvar(ADC_TOKEN = "from-the-environment")
-  expect_identical(get_meteo_for_date(params_file = g), day)
+  expect_identical(adc_weather_date(params_file = g), day)
 })
 
-test_that("get_meteo_for_long_period records the chunks it was asked for", {
+test_that("adc_weather_long_period records the chunks it was asked for", {
   seen <- list()
-  local_mocked_bindings(get_meteo_for_period = function(meteostation, fromdate, todate, ...) {
-    seen[[length(seen) + 1]] <<- c(meteostation, as.character(fromdate), as.character(todate))
+  local_mocked_bindings(adc_weather_period = function(station, trange, ...) {
+    seen[[length(seen) + 1]] <<- c(station, as.character(trange))
     sf::st_sf(a = 1, geometry = sf::st_sfc(sf::st_point(c(5, 52)), crs = 4326))
   })
   f <- tmp_json()
-  suppressMessages(get_meteo_for_long_period(260, "2024-01-01", "2024-01-20", token = "SECRET", by_days = 7,
+  suppressMessages(adc_weather_long_period(260, c("2024-01-01", "2024-01-20"), token = "SECRET", by_days = 7,
                                              sleep_sec = 0, save_params = f))
   p <- read_file(f)
-  expect_equal(list(p$meteostation, p$fromdate, p$todate, p$by_days, p$sleep_sec), list(260, "2024-01-01", "2024-01-20", 7, 0))
+  expect_equal(list(p$station, p$trange, p$by_days, p$sleep_sec), list(260, "2024-01-01T00:00:00Z/2024-01-20T00:00:00Z", 7, 0))
   expect_no_secrets(f)
   first <- seen; seen <- list()
-  suppressMessages(get_meteo_for_long_period(params_file = f, token = "SECRET"))
+  suppressMessages(adc_weather_long_period(params_file = f, token = "SECRET"))
   expect_equal(seen, first)
   seen <- list()
-  suppressMessages(get_meteo_for_long_period(params_file = f, by_days = 30, token = "SECRET"))
+  suppressMessages(adc_weather_long_period(params_file = f, by_days = 30, token = "SECRET"))
   expect_length(seen, 1)
 })
 
-test_that("get_closest_meteostation records the area in any form, as a geometry", {
+test_that("adc_weather_station records the area in any form, as a geometry", {
   with_adc_stubs()
   webmockr::stub_request("get", uri_regex = "agrodatacube.wur.nl/api/v2/rest/meteostations") |>
     webmockr::to_return(body = json_body(list(type = "FeatureCollection",
@@ -162,12 +162,12 @@ test_that("get_closest_meteostation records the area in any form, as a geometry"
                         headers = json_header)
   wkt <- "POLYGON((6.4 53.1, 6.6 53.1, 6.6 53.3, 6.4 53.3, 6.4 53.1))"
   f <- tmp_json(); g <- tmp_json()
-  first <- get_closest_meteostation(wkt, token = "t", save_params = f)
-  get_closest_meteostation(sf::st_sf(geometry = sf::st_as_sfc(wkt, crs = 4326)), token = "t", save_params = g)
-  expect_equal(read_file(f)$polygon_wkt, read_file(g)$polygon_wkt)       # a WKT text and an sf object: the same file
-  expect_equal(read_file(f)$polygon_wkt$type, "Polygon")
+  first <- adc_weather_station(wkt, token = "t", save_params = f)
+  adc_weather_station(sf::st_sf(geometry = sf::st_as_sfc(wkt, crs = 4326)), token = "t", save_params = g)
+  expect_equal(read_file(f)$roi, read_file(g)$roi)       # a WKT text and an sf object: the same file
+  expect_equal(read_file(f)$roi$type, "Polygon")
   expect_no_secrets(f)
-  again <- get_closest_meteostation(params_file = f, token = "t")
+  again <- adc_weather_station(params_file = f, token = "t")
   expect_equal(again$closest_id, first$closest_id)
   expect_equal(again$distances, first$distances)
 })
@@ -219,12 +219,12 @@ test_that("gm_get records its parameters, and repeats them", {
   ok <- gm_url("NDVI", p)
   webmockr::stub_request("get", ok) |> webmockr::to_return(body = "x", status = 200)
   f <- tmp_json()
-  gm_get(option = "NDVI", params = p, out_path = withr::local_tempfile(), save_params = f)
+  gm_get(option = "NDVI", params = p, output_path = withr::local_tempfile(), save_params = f)
   q <- read_file(f)
   expect_equal(q$schema, "rNDC-gm_get/1")
   expect_equal(q$params$date, "20251225")
   expect_no_secrets(f)
-  res <- gm_get(params_file = f, out_path = withr::local_tempfile())
+  res <- gm_get(params_file = f, output_path = withr::local_tempfile())
   expect_equal(httr::status_code(res), 200L)
   expect_equal(res$url, ok)
 })
@@ -233,10 +233,10 @@ test_that("ndc_repeat runs a file without knowing its function", {
   local_stac_api(nitrogen_items())
   local_mocked_bindings(stac_download_one = function(href, ...) mock_download(href, ...))
   f <- tmp_json()
-  first <- get_nitrogen_raster(square_4326(), "2024", token = "t", out_dir = withr::local_tempdir(), save_params = f)
-  again <- ndc_repeat(f, token = "t", out_dir = withr::local_tempdir())
+  first <- ndc_nitrogen_raster(square_4326(), "2024", token = "t", output_dir = withr::local_tempdir(), save_params = f)
+  again <- ndc_repeat(f, token = "t", output_dir = withr::local_tempdir())
   expect_equal(names(again$stack), names(first$stack))
-  expect_equal(names(ndc_repeat(f, year = "2025", token = "t", out_dir = withr::local_tempdir())$stack), "ntot_2025")
+  expect_equal(names(ndc_repeat(f, year = "2025", token = "t", output_dir = withr::local_tempdir())$stack), "ntot_2025")
 
   # a function whose `params` are request parameters
   with_adc_stubs()
@@ -259,34 +259,34 @@ test_that("a file is for one function, and nothing is written when the function 
   local_stac_api(list(stac_item("a")))
   f <- tmp_json()
   ndc_get("coll", token = "t", save_params = f)
-  expect_error(get_landuse_raster(params_file = f, token = "t"), "holds the parameters of ndc_get\\(\\), not of get_landuse_raster\\(\\)")
+  expect_error(ndc_landuse_raster(params_file = f, token = "t"), "holds the parameters of ndc_get\\(\\), not of ndc_landuse_raster\\(\\)")
 
   # a failing call leaves no file, and an existing one is not touched
   g <- tmp_json()
   local_stac_api(list())
-  expect_error(get_landuse_raster(square_4326(), year = 2024, token = "t", out_dir = withr::local_tempdir(), save_params = g),
+  expect_error(ndc_landuse_raster(square_4326(), year = 2024, token = "t", output_dir = withr::local_tempdir(), save_params = g),
                "No Land Use raster items")
   expect_false(file.exists(g))
-  expect_error(get_nitrogen_raster(square_4326(), year = "", token = "t", save_params = g))
+  expect_error(ndc_nitrogen_raster(square_4326(), year = "", token = "t", save_params = g))
   expect_false(file.exists(g))
   local_stac_api(items = ndvi_items(), status = 500L)
-  expect_error(get_ndvi_stats(square(ndc_id = "1"), "ndvi-lter", token = "t", save_params = g))
+  expect_error(ndc_ndvi_stats(square(ndc_id = "1"), "ndvi-lter", token = "t", save_params = g))
   expect_false(file.exists(g))
 })
 
 test_that("fields that a function does not take from a file are ignored with a warning, in every function", {
   f <- tmp_json()
-  writeLines(paste0('{"schema": "rNDC-get_meteo_for_period/1", "meteostation": 260, "fromdate": "2024-01-01", ',
-                    '"todate": "2024-01-02", "token": "SECRET", "out_dir": "/etc"}'), f)
+  writeLines(paste0('{"schema": "rNDC-adc_weather_period/1", "station": 260, "trange": "2024-01-01T00:00:00Z/2024-01-02T00:00:00Z", ',
+                    '"token": "SECRET", "out_dir": "/etc"}'), f)
   with_adc_stubs()
   webmockr::stub_request("get", meteo_url("20240101", "20240102")) |>
     webmockr::to_return(body = json_body(list(type = "FeatureCollection", features = list(
       list(type = "Feature", geometry = list(type = "Point", coordinates = c(5, 52)), properties = list(datum = "2024-01-01"))))),
       headers = json_header)
-  expect_warning(get_meteo_for_period(params_file = f, token = "t"), "token, out_dir")
+  expect_warning(adc_weather_period(params_file = f, token = "t"), "token, out_dir")
   # values of the wrong type are refused with the name of the field
-  writeLines('{"schema": "rNDC-get_meteo_for_period/1", "meteostation": [1], "page_size": 0}', f)
-  expect_error(get_meteo_for_period(params_file = f, token = "t"), "`meteostation`")
-  writeLines('{"schema": "rNDC-get_meteo_for_period/1", "meteostation": 1, "page_size": 0}', f)
-  expect_error(get_meteo_for_period(params_file = f, token = "t"), "`page_size`")
+  writeLines('{"schema": "rNDC-adc_weather_period/1", "station": [1], "page_size": 0}', f)
+  expect_error(adc_weather_period(params_file = f, token = "t"), "`station`")
+  writeLines('{"schema": "rNDC-adc_weather_period/1", "station": 1, "page_size": 0}', f)
+  expect_error(adc_weather_period(params_file = f, token = "t"), "`page_size`")
 })

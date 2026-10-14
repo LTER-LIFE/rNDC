@@ -34,3 +34,27 @@ ndc_trange <- function(x) {
     paste(lapply(sort(x), FUN = as_rfc3339), collapse = "/")
   }
 }
+
+# The two ends of a period as POSIXct (`NA` for an open side), from anything that ndc_trange() accepts
+trange_bounds <- function(trange) {
+  if (is.null(trange)) return(as.POSIXct(c(NA, NA), tz = "UTC"))
+  text <- ndc_trange(trange)
+  if (is.na(text)) return(as.POSIXct(c(NA, NA), tz = "UTC"))
+  parts <- strsplit(text, "/", fixed = TRUE)[[1]]
+  if (length(parts) == 1) parts <- c(parts, parts)
+  parts[parts == ".."] <- NA
+  as.POSIXct(lubridate::as_datetime(parts), tz = "UTC")
+}
+
+# The two ends of a period as Dates, both required (the weather and monthly NDVI functions need a first and a last day).
+# A text can be "YYYYMMDD" as well as "YYYY-MM-DD".
+trange_dates <- function(trange, arg = "trange") {
+  if (is.character(trange) && length(trange) == 2) {
+    trange <- ifelse(grepl("^[0-9]{8}$", trange), format(as.Date(trange, "%Y%m%d")), trange)
+  }
+  bounds <- tryCatch(trange_bounds(trange), error = function(e) as.POSIXct(c(NA, NA), tz = "UTC"))
+  if (length(bounds) != 2 || anyNA(bounds)) {
+    stop("`", arg, "` must be a first and a last date (Date, or text like \"2024-01-31\").", call. = FALSE)
+  }
+  as.Date(bounds)
+}

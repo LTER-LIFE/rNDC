@@ -2,7 +2,7 @@
 #'
 #' Search (and optionally download) data from NatureDataCube, through a custom STAC query.
 #'
-#' @param collection character. Collection ID.
+#' @param collections character. IDs of the collections to search (one or more).
 #' @param roi character, numeric or sf. Region of interest, see [ndc_roi()]. Can be either: (i) a path to a file with a custom geometry, (ii) a numeric vector with coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.
 #' @param trange Date, POSIXct or character. One or two dates; `NA` leaves a side of the range open. Converted with `ndc_trange()`.
 #' @param limit integer. Maximum number of STAC Items to return. Note that for `mode = "items"` only the first page of at most `limit` items is returned; compare with the number matched.
@@ -22,14 +22,14 @@
 #' @details
 #' **Saving and repeating a search.** With `save_params = "search.json"` the call writes its parameters to a file,
 #' and `ndc_get(params_file = "search.json")` makes the same search again, for example for another `mode`. The file has the
-#' `collection`s, the `roi` (as a GeoJSON geometry in EPSG:4326, whatever form it was given in), the `trange` (the STAC
+#' `collections`, the `roi` (as a GeoJSON geometry in EPSG:4326, whatever form it was given in), the `trange` (the STAC
 #' `datetime` text), `limit`, `mode`, `all_pages` and `asset_names` (when set), and the number of items matched
 #' (`matched`; `save_ids = TRUE` adds their ids). The token is never written, and neither are `output_dir` and
 #' `overwrite`. The format, and what else can be recorded this way, is described in [ndc_repeat()].
 #' @returns Depends on `mode`: a STAC item collection (`items`, `fetch`), a tibble, an sf or sfc object (empty if nothing matches), or the result of downloading the assets.
 #' @export
 
-ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL,
+ndc_get <- function(collections, roi = NULL, trange = NULL, asset_names = NULL,
                     limit = 100, token = Sys.getenv("NDC_TOKEN"), mode = "items",
                     output_dir = tempdir(), overwrite = TRUE, progress = FALSE, all_pages = FALSE,
                     params_file = NULL, save_params = NULL, save_ids = FALSE) {
@@ -44,7 +44,7 @@ ndc_get <- function(collection, roi = NULL, trange = NULL, asset_names = NULL,
   endpoint <- stac(ndc_endpoint())
   
   ## Search items
-  query <- stac_search(endpoint, collections = collection, limit = limit)
+  query <- stac_search(endpoint, collections = collections, limit = limit)
   if (!is.null(roi)) {
     query <- stac_search(query, intersects = ndc_roi(roi), limit = limit)
   }

@@ -21,14 +21,14 @@ from such a file (\code{params_file = "file.json"}): the file is a record of wha
 without having to know which function it is for.
 }
 \details{
-The functions with \code{save_params} and \code{params_file} are \code{\link[=ndc_get]{ndc_get()}}, \code{\link[=get_landuse_raster]{get_landuse_raster()}}, \code{\link[=get_nitrogen_raster]{get_nitrogen_raster()}},
-\code{\link[=get_ndvi_stats]{get_ndvi_stats()}}, \code{\link[=download_avg_ndvi_month]{download_avg_ndvi_month()}}, \code{\link[=download_avg_ndvi_stack]{download_avg_ndvi_stack()}}, \code{\link[=get_closest_meteostation]{get_closest_meteostation()}},
-\code{\link[=get_meteo_for_date]{get_meteo_for_date()}}, \code{\link[=get_meteo_for_period]{get_meteo_for_period()}}, \code{\link[=get_meteo_for_long_period]{get_meteo_for_long_period()}}, \code{\link[=adc_get]{adc_get()}}, \code{\link[=adc_get_all]{adc_get_all()}} and
+The functions with \code{save_params} and \code{params_file} are \code{\link[=ndc_get]{ndc_get()}}, \code{\link[=ndc_landuse_raster]{ndc_landuse_raster()}}, \code{\link[=ndc_nitrogen_raster]{ndc_nitrogen_raster()}},
+\code{\link[=ndc_ndvi_stats]{ndc_ndvi_stats()}}, \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}, \code{\link[=gm_ndvi_stack]{gm_ndvi_stack()}}, \code{\link[=adc_weather_station]{adc_weather_station()}},
+\code{\link[=adc_weather_date]{adc_weather_date()}}, \code{\link[=adc_weather_period]{adc_weather_period()}}, \code{\link[=adc_weather_long_period]{adc_weather_long_period()}}, \code{\link[=adc_get]{adc_get()}}, \code{\link[=adc_get_all]{adc_get_all()}} and
 \code{\link[=gm_get]{gm_get()}}. A function with \code{save_params} writes the file when it has finished without an error (\code{ndc_get()}: when
 the search has succeeded). \code{params_file} supplies the arguments that you do not give yourself; what you give overrides the
 file, also \code{NULL} (for example \code{roi = NULL} leaves the area out).
 
-The file has \code{schema} (the format and the function: \code{"rNDC-get_landuse_raster/1"}), the arguments of the function as
+The file has \code{schema} (the format and the function: \code{"rNDC-ndc_landuse_raster/1"}), the arguments of the function as
 they were when it finished (the defaults too, so that a later change of a default does not change the file's
 meaning), and what describes the run: the time (\code{created}), the rNDC version (\code{rNDC}) and, for the functions that use
 the NatureDataCube, its \code{endpoint}. An area is written as a GeoJSON geometry in EPSG:4326 whatever form it was given
@@ -48,7 +48,7 @@ the catalogue, not retrievals.
 }
 \examples{
 \dontrun{
-get_landuse_raster(c(5.74, 52.05, 5.76, 52.07), year = 2024, save_params = "landuse.json")
+ndc_landuse_raster(c(5.74, 52.05, 5.76, 52.07), year = 2024, save_params = "landuse.json")
 ndc_repeat("landuse.json")                      # again, here or on another machine
 ndc_repeat("landuse.json", year = 2023)         # the same area, another year
 }

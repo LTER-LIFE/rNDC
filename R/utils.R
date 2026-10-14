@@ -8,6 +8,13 @@
   if (is.null(x) || length(x) == 0 || (length(x) == 1 && is.na(x))) y else x
 }
 
+# The value of an argument that was renamed: `old_value` was given with the deprecated name `old`, which is now `new`.
+# Warns that the old name is deprecated.
+deprecated_argument <- function(old_value, old, new, fn) {
+  .Deprecated(msg = sprintf("The argument `%s` of %s() is deprecated: use `%s`.", old, fn, new))
+  old_value
+}
+
 # ---- Tokens and HTTP errors ----
 
 # Stop with an informative message when an API token is missing (NULL, NA or empty), instead of sending a request
@@ -52,31 +59,27 @@ params_version <- 1L
 # `file_prefix`, `overwrite`), the endpoint argument of the functions that have one, and the objects that cannot be
 # put in a file (the items given to assets_download_wcs()).
 #
-# Types: "text" and "texts" (one, or one or more strings), "integer", "count" (a whole number of at least 1), "number", "flag" (TRUE/FALSE), "any" (a string
+# Types: "text" and "texts" (one, or one or more strings), "trange" (a period, written as the STAC `datetime` text), "integer", "count" (a whole number of at least 1), "number", "flag" (TRUE/FALSE), "any" (a string
 # or a number), "date" (a string "YYYY-MM-DD", or a date-time), "roi" (a geometry, as GeoJSON in EPSG:4326) and "map"
 # (a named list of strings: the `params` of the AgroDataCube and GroenMonitor functions).
 params_specs <- list(
-  ndc_get = list(endpoint = TRUE, args = c(collection = "texts", roi = "roi", trange = "text", asset_names = "texts",
+  ndc_get = list(endpoint = TRUE, args = c(collections = "texts", roi = "roi", trange = "trange", asset_names = "texts",
                                            limit = "count", mode = "text", all_pages = "flag")),
-  get_landuse_raster = list(endpoint = TRUE, args = c(aoi = "roi", year = "any", collection = "text", limit = "count",
+  ndc_landuse_raster = list(endpoint = TRUE, args = c(roi = "roi", year = "any", collection = "text", limit = "count",
                                                       subset_crs = "integer", min_file_size = "integer")),
-  get_nitrogen_raster = list(endpoint = TRUE, args = c(aoi = "roi", year = "any", layers = "texts", collection = "texts",
+  ndc_nitrogen_raster = list(endpoint = TRUE, args = c(roi = "roi", year = "any", layers = "texts", collections = "texts",
                                                        limit = "count")),
-  get_ndvi_stats = list(endpoint = TRUE, args = c(aoi = "roi", collection = "text", from = "date", to = "date",
-                                                  ndc_id = "texts")),
-  download_avg_ndvi_month = list(endpoint = FALSE, args = c(poly = "roi", year = "integer", month = "integer",
-                                                            epsg = "integer")),
-  download_avg_ndvi_stack = list(endpoint = FALSE, args = c(poly = "roi", start_year = "integer", start_month = "integer",
-                                                            end_year = "integer", end_month = "integer", epsg = "integer")),
-  get_closest_meteostation = list(endpoint = FALSE, args = c(polygon_wkt = "roi", page_size = "count",
-                                                             page_offset = "integer", output_epsg = "any")),
-  get_meteo_for_date = list(endpoint = FALSE, args = c(stationid = "any", date = "date", page_size = "count",
+  ndc_ndvi_stats = list(endpoint = TRUE, args = c(roi = "roi", collection = "text", trange = "trange", ndc_id = "texts")),
+  gm_ndvi_month = list(endpoint = FALSE, args = c(roi = "roi", year = "integer", month = "integer", epsg = "integer")),
+  gm_ndvi_stack = list(endpoint = FALSE, args = c(roi = "roi", trange = "trange", epsg = "integer")),
+  adc_weather_station = list(endpoint = FALSE, args = c(roi = "roi", page_size = "count", page_offset = "integer",
+                                                        output_epsg = "any")),
+  adc_weather_date = list(endpoint = FALSE, args = c(station = "any", date = "date", page_size = "count",
+                                                     page_offset = "integer", output_epsg = "any")),
+  adc_weather_period = list(endpoint = FALSE, args = c(station = "any", trange = "trange", page_size = "count",
                                                        page_offset = "integer", output_epsg = "any")),
-  get_meteo_for_period = list(endpoint = FALSE, args = c(meteostation = "any", fromdate = "date", todate = "date",
-                                                         page_size = "count", page_offset = "integer", output_epsg = "any")),
-  get_meteo_for_long_period = list(endpoint = FALSE, args = c(meteostation = "any", fromdate = "date", todate = "date",
-                                                              by_days = "count", page_size = "count",
-                                                              output_epsg = "any", sleep_sec = "number")),
+  adc_weather_long_period = list(endpoint = FALSE, args = c(station = "any", trange = "trange", by_days = "count",
+                                                            page_size = "count", output_epsg = "any", sleep_sec = "number")),
   adc_get = list(endpoint = FALSE, args = c(url = "text", option = "text", params = "map", server = "text")),
   adc_get_all = list(endpoint = FALSE, args = c(option = "text", params = "map", server = "text", page_size = "count",
                                                 max_pages = "count")),
@@ -99,6 +102,7 @@ params_encode <- function(value, type, what) {
   switch(type,
     text = , any = if (is.na(value[1])) NULL else if (type == "any" && is.numeric(value)) unname(value[[1]]) else as.character(value[[1]]),
     texts = as.list(as.character(value)),
+    trange = { text <- ndc_trange(value); if (is.na(text)) NULL else text },
     integer = , count = if (is.na(value[1])) NULL else as.integer(value[[1]]),
     number = if (is.na(value[1])) NULL else as.numeric(value[[1]]),
     flag = isTRUE(value[[1]]),
@@ -220,6 +224,7 @@ params_decode <- function(value, type, arg, path) {
   scalar <- function(v) !is.list(v) && length(v) == 1 && !is.na(v)
   switch(type,
     text = , date = if (is.character(value) && scalar(value) && nzchar(value)) value else fail("a text"),
+    trange = if (is.character(value) && scalar(value) && !is.na(ndc_trange(value))) value else fail("a period (a STAC datetime text)"),
     any = if (scalar(value) && (is.character(value) || is.numeric(value))) value else fail("a text or a number"),
     texts = {
       v <- unlist(value)

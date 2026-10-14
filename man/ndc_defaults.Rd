@@ -29,6 +29,6 @@ the default year (integer); \code{ndc_nitrogen_layers()}: the nitrogen layers (a
 read from the STAC API (an error if the API cannot be reached).
 }
 \description{
-The collection and default year of the land use rasters (see \code{\link[=get_landuse_raster]{get_landuse_raster()}}), the layers of the
-nitrogen rasters (see \code{\link[=get_nitrogen_raster]{get_nitrogen_raster()}}), and the years for which they exist in the NatureDataCube.
+The collection and default year of the land use rasters (see \code{\link[=ndc_landuse_raster]{ndc_landuse_raster()}}), the layers of the
+nitrogen rasters (see \code{\link[=ndc_nitrogen_raster]{ndc_nitrogen_raster()}}), and the years for which they exist in the NatureDataCube.
 }

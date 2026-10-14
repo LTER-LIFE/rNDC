@@ -11,9 +11,9 @@ test_that("gm_get writes the file, and removes it and reports the message on err
       body = "<ows:ExceptionReport><ows:Exception><ows:ExceptionText>Could not locate coverage</ows:ExceptionText></ows:Exception></ows:ExceptionReport>",
       status = 404, headers = list("Content-Type" = "application/xml"))
 
-  expect_equal(httr::status_code(gm_get(url = ok, out_path = withr::local_tempfile())), 200L)
+  expect_equal(httr::status_code(gm_get(url = ok, output_path = withr::local_tempfile())), 200L)
 
   out <- withr::local_tempfile()
-  expect_error(gm_get(url = bad, out_path = out), "HTTP 404\\): Could not locate coverage")
+  expect_error(gm_get(url = bad, output_path = out), "HTTP 404\\): Could not locate coverage")
   expect_false(file.exists(out))
 })

@@ -8,16 +8,18 @@
 #' @param server character. Server to connect to, either the main or test _AgroDataCube_ server.
 #' @param token character. API token.
 #' @param download boolean. If `TRUE`, download file.
-#' @param out_path character. Output path.
+#' @param output_path character. Output path.
+#' @param out_path Deprecated: use `output_path`.
 #' @param overwrite boolean. If `TRUE`, overwrite file.
 #' @inheritParams ndc_get
 #' @returns The parsed content of the response (a list for JSON responses). An error is raised if the request fails.
 #' @export
 
 adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE,
-                    token = Sys.getenv("ADC_TOKEN"), out_path = tempfile(), overwrite = TRUE,
-                    params_file = NULL, save_params = NULL) {
+                    token = Sys.getenv("ADC_TOKEN"), output_path = tempfile(), overwrite = TRUE,
+                    params_file = NULL, save_params = NULL, out_path = NULL) {
 
+  if (!is.null(out_path)) output_path <- deprecated_argument(out_path, "out_path", "output_path", "adc_get")
   if (!is.null(params_file)) params_apply("adc_get", params_file)
   if (!is.null(save_params)) params_save_when_done("adc_get", save_params)
 
@@ -54,12 +56,12 @@ adc_get <- function(url = NULL, option, params, server = "adc", download = FALSE
   # Submit request
   if (download) {
     response <- VERB("GET", url = request_url, add_headers(request_headers),
-                     write_disk(out_path, overwrite = overwrite))
+                     write_disk(output_path, overwrite = overwrite))
   } else {
     response <- VERB("GET", url = request_url, add_headers(request_headers))
   }
   if (httr::http_error(response)) {
-    if (download) on.exit(unlink(out_path), add = TRUE)  # remove the saved error body
+    if (download) on.exit(unlink(output_path), add = TRUE)  # remove the saved error body
     stop_for_http_error(response, "AgroDataCube")
   }
   return(content(response))

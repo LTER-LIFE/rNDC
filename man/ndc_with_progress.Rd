@@ -17,8 +17,8 @@ ndc_with_progress(expr, report = NULL, interrupt = NULL)
 The value of \code{expr}.
 }
 \description{
-Some functions make many requests: \code{\link[=get_meteo_for_long_period]{get_meteo_for_long_period()}} one per chunk of days,
-\code{\link[=download_avg_ndvi_month]{download_avg_ndvi_month()}} and \code{\link[=download_avg_ndvi_stack]{download_avg_ndvi_stack()}} one download per day. They report where they are
+Some functions make many requests: \code{\link[=adc_weather_long_period]{adc_weather_long_period()}} one per chunk of days,
+\code{\link[=gm_ndvi_month]{gm_ndvi_month()}} and \code{\link[=gm_ndvi_stack]{gm_ndvi_stack()}} one download per day. They report where they are
 before each request, and give the caller the chance to stop, through two options that \code{ndc_with_progress()} sets
 for the duration of an expression:
 }
@@ -39,7 +39,7 @@ Without these options nothing changes.
 \examples{
 \dontrun{
 ndc_with_progress(
-  get_meteo_for_long_period(310, "2020-01-01", "2020-12-31", token = Sys.getenv("ADC_TOKEN")),
+  adc_weather_long_period(310, c("2020-01-01", "2020-12-31"), token = Sys.getenv("ADC_TOKEN")),
   report = function(message, current, total) cat(sprintf("\%d of \%d\n", current, total))
 )
 
@@ -47,7 +47,7 @@ ndc_with_progress(
 start <- Sys.time()
 res <- tryCatch(
   ndc_with_progress(
-    download_avg_ndvi_stack(poly, 2023, 1, 2023, 12),
+    gm_ndvi_stack(roi, c("2023-01-01", "2023-12-31")),
     interrupt = function() difftime(Sys.time(), start, units = "secs") > 30
   ),
   rNDC_interrupted = function(e) NULL

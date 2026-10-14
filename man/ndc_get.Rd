@@ -5,7 +5,7 @@
 \title{Search and download data from NatureDataCube}
 \usage{
 ndc_get(
-  collection,
+  collections,
   roi = NULL,
   trange = NULL,
   asset_names = NULL,
@@ -22,7 +22,7 @@ ndc_get(
 )
 }
 \arguments{
-\item{collection}{character. Collection ID.}
+\item{collections}{character. IDs of the collections to search (one or more).}
 
 \item{roi}{character, numeric or sf. Region of interest, see \code{\link[=ndc_roi]{ndc_roi()}}. Can be either: (i) a path to a file with a custom geometry, (ii) a numeric vector with coordinates representing a bounding box, or (iii) an sf object with a (multi)polygon representing a custom region of interest.}
 
@@ -62,7 +62,7 @@ Search (and optionally download) data from NatureDataCube, through a custom STAC
 \details{
 \strong{Saving and repeating a search.} With \code{save_params = "search.json"} the call writes its parameters to a file,
 and \code{ndc_get(params_file = "search.json")} makes the same search again, for example for another \code{mode}. The file has the
-\code{collection}s, the \code{roi} (as a GeoJSON geometry in EPSG:4326, whatever form it was given in), the \code{trange} (the STAC
+\code{collections}, the \code{roi} (as a GeoJSON geometry in EPSG:4326, whatever form it was given in), the \code{trange} (the STAC
 \code{datetime} text), \code{limit}, \code{mode}, \code{all_pages} and \code{asset_names} (when set), and the number of items matched
 (\code{matched}; \code{save_ids = TRUE} adds their ids). The token is never written, and neither are \code{output_dir} and
 \code{overwrite}. The format, and what else can be recorded this way, is described in \code{\link[=ndc_repeat]{ndc_repeat()}}.

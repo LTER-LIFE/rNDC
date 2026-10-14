@@ -1,7 +1,7 @@
 #' Follow, and interrupt, long downloads
 #'
-#' Some functions make many requests: [get_meteo_for_long_period()] one per chunk of days,
-#' [download_avg_ndvi_month()] and [download_avg_ndvi_stack()] one download per day. They report where they are
+#' Some functions make many requests: [adc_weather_long_period()] one per chunk of days,
+#' [gm_ndvi_month()] and [gm_ndvi_stack()] one download per day. They report where they are
 #' before each request, and give the caller the chance to stop, through two options that `ndc_with_progress()` sets
 #' for the duration of an expression:
 #'
@@ -23,7 +23,7 @@
 #' @examples
 #' \dontrun{
 #' ndc_with_progress(
-#'   get_meteo_for_long_period(310, "2020-01-01", "2020-12-31", token = Sys.getenv("ADC_TOKEN")),
+#'   adc_weather_long_period(310, c("2020-01-01", "2020-12-31"), token = Sys.getenv("ADC_TOKEN")),
 #'   report = function(message, current, total) cat(sprintf("%d of %d\n", current, total))
 #' )
 #'
@@ -31,7 +31,7 @@
 #' start <- Sys.time()
 #' res <- tryCatch(
 #'   ndc_with_progress(
-#'     download_avg_ndvi_stack(poly, 2023, 1, 2023, 12),
+#'     gm_ndvi_stack(roi, c("2023-01-01", "2023-12-31")),
 #'     interrupt = function() difftime(Sys.time(), start, units = "secs") > 30
 #'   ),
 #'   rNDC_interrupted = function(e) NULL
