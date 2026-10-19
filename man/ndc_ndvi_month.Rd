@@ -13,6 +13,7 @@ ndc_ndvi_month(
   subset_crs = ndvi_subset_crs,
   limit = 100,
   clip = FALSE,
+  scale = TRUE,
   params_file = NULL,
   save_params = NULL
 )
@@ -33,6 +34,9 @@ ndc_ndvi_month(
 \item{clip}{logical. If \code{TRUE}, the result is clipped to the area (cells outside it are \code{NA}); by default it covers
 the bounding box, like \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}.}
 
+\item{scale}{logical. The rasters hold digital numbers (0-255, NDVI = number / 250, see \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}); if \code{TRUE}
+(the default) the result is NDVI, otherwise it is the mean of the digital numbers.}
+
 \item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
 call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you
 give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the area out).}
@@ -41,7 +45,8 @@ give overrides the file (also \code{NULL}, e.g. \code{roi = NULL} leaves the are
 succeeded (for \code{ndc_get()}: the search), see \code{\link[=ndc_repeat]{ndc_repeat()}}.}
 }
 \value{
-A single-layer \code{SpatRaster} named \code{ndvi_mean_YYYYMM}, or \code{NULL} if no data is available.
+A single-layer \code{SpatRaster} named \code{ndvi_mean_YYYYMM} (NDVI, or the digital numbers with \code{scale = FALSE}), or
+\code{NULL} if no data is available.
 }
 \description{
 Search the \code{ndvi} collection of the NatureDataCube for the days of a month with NDVI data for an area, download

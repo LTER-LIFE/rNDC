@@ -22,6 +22,17 @@ test_that("a month is the mean of the days of the items, asked with the subset o
   expect_true(all(grepl("&subset=E\\(.*&subset=N\\(", urls$all)))
 })
 
+test_that("the mean is NDVI (the numbers divided by 250) unless scale = FALSE", {
+  local_stac_api(ndvi_stac_items())
+  local_ndvi_download()
+  numbers <- suppressMessages(ndc_ndvi_month(square_4326(), 2024, 2, token = "t", scale = FALSE))
+  ndvi <- suppressMessages(ndc_ndvi_month(square_4326(), 2024, 2, token = "t"))
+  expect_equal(terra::values(numbers)[, 1], as.numeric(1:16))              # the cells of the fake download
+  expect_equal(terra::values(ndvi)[, 1], as.numeric(1:16) / 250)
+  stack <- suppressMessages(ndc_ndvi_stack(square_4326(), c("2024-02-01", "2024-03-31"), token = "t"))
+  expect_equal(terra::values(stack)[, 2], as.numeric(1:16) / 250)
+})
+
 test_that("a stack has a layer for each month with data, and reports each item", {
   local_stac_api(ndvi_stac_items())
   local_ndvi_download()

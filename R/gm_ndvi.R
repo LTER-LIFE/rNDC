@@ -8,11 +8,14 @@
 #' @param roi character, numeric or sf. Region of interest, see [ndc_roi()]; its bounding box is requested.
 #' @param year,month integer. Year and month.
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
+#' @param scale logical. The GroenMonitor rasters hold digital numbers (0-255, NDVI = number / 250, see its legend); if
+#'   `TRUE` (the default) the result is NDVI, otherwise it is the mean of the digital numbers.
 #' @inheritParams ndc_get
-#' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM`, or `NULL` if no data is available.
+#' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM` (NDVI, or the digital numbers with `scale = FALSE`), or
+#'   `NULL` if no data is available.
 #' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
-gm_ndvi_month <- function(roi, year, month, epsg = 32631, params_file = NULL, save_params = NULL) {
+gm_ndvi_month <- function(roi, year, month, epsg = 32631, scale = TRUE, params_file = NULL, save_params = NULL) {
   if (!is.null(params_file)) params_apply("gm_ndvi_month", params_file)
   if (!is.null(save_params)) params_save_when_done("gm_ndvi_month", save_params)
 
@@ -25,7 +28,7 @@ gm_ndvi_month <- function(roi, year, month, epsg = 32631, params_file = NULL, sa
   files <- gm_download_month(year, month, gm_bbox(roi, epsg), tmpdir)
   message("Downloaded ", length(files), " NDVI layer(s) for the month")
 
-  r_mean <- gm_month_mean(files, year, month)
+  r_mean <- gm_month_mean(files, year, month, scale)
   if (is.null(r_mean)) message("No NDVI data available for the selected month")
   r_mean
 }
@@ -38,11 +41,13 @@ gm_ndvi_month <- function(roi, year, month, epsg = 32631, params_file = NULL, sa
 #' @param roi character, numeric or sf. Region of interest, see [ndc_roi()]; its bounding box is requested.
 #' @param trange Date or character. The first and the last day of the period (two dates, or `"YYYY-MM-DD"` texts): the months of both are included.
 #' @param epsg integer. EPSG code of the CRS in which the bounding box is requested.
+#' @param scale logical. If `TRUE` (the default) the result is NDVI; otherwise the mean of the digital numbers (0-255) of
+#'   the rasters, see [gm_ndvi_month()].
 #' @inheritParams ndc_get
 #' @returns A `SpatRaster` with one layer per month with data (named `ndvi_mean_YYYYMM`), or `NULL` if no data is available.
 #' @seealso [ndc_with_progress()] to follow the downloads, or to stop them.
 #' @export
-gm_ndvi_stack <- function(roi, trange, epsg = 32631, params_file = NULL, save_params = NULL) {
+gm_ndvi_stack <- function(roi, trange, epsg = 32631, scale = TRUE, params_file = NULL, save_params = NULL) {
   if (!is.null(params_file)) params_apply("gm_ndvi_stack", params_file)
   if (!is.null(save_params)) params_save_when_done("gm_ndvi_stack", save_params)
 
@@ -59,7 +64,7 @@ gm_ndvi_stack <- function(roi, trange, epsg = 32631, params_file = NULL, save_pa
 
   n_days <- sum(as.integer(ceiling_date(month_seq, "month") - month_seq))
   done_days <- 0L
-  ndvi_stack_months(month_seq, function(year_m, month_m) {
+  ndvi_stack_months(month_seq, scale, function(year_m, month_m) {
     first <- as.Date(sprintf("%04d-%02d-01", year_m, month_m))
     files <- gm_download_month(year_m, month_m, bbox, tmpdir, done = done_days, total = n_days)
     done_days <<- done_days + as.integer(ceiling_date(first, "month") - first)
@@ -117,8 +122,8 @@ gm_download_month <- function(year, month, bbox, dir, done = 0L, total = NA_inte
 
 # Read the daily rasters `files` and average them: a single layer named `ndvi_mean_YYYYMM`, or NULL if there is
 # no data. Daily coverages can come on slightly different grids: they are aligned to the first one. The files are
-# removed.
-gm_month_mean <- function(files, year, month) {
+# removed. The rasters hold digital numbers: with `scale` the mean is divided by `ndvi_scale` (NDVI).
+gm_month_mean <- function(files, year, month, scale = TRUE) {
   on.exit(unlink(files, force = TRUE), add = TRUE)
   if (length(files) == 0) return(NULL)
 
@@ -136,6 +141,7 @@ gm_month_mean <- function(files, year, month) {
   r_mean <- app(daily, mean, na.rm = TRUE)
   r_mean[is.nan(r_mean)] <- NA
   if (all(is.na(values(r_mean)))) return(NULL)
+  if (scale) r_mean <- r_mean / ndvi_scale
   names(r_mean) <- paste0("ndvi_mean_", year, sprintf("%02d", month))
   r_mean
 }

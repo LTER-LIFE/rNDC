@@ -143,6 +143,8 @@ test_that("NDVI through the NatureDataCube equals the download from GroenMonitor
   expect_equal(names(stac), "ndvi_mean_202306")
   expect_true(terra::compareGeom(stac, direct, stopOnError = FALSE))
   expect_equal(terra::values(stac), terra::values(direct))
+  expect_lte(max(terra::values(stac), na.rm = TRUE), 1)                          # NDVI: the numbers divided by 250
+  expect_equal(terra::values(suppressMessages(ndc_ndvi_month(roi, 2023, 6, scale = FALSE))), terra::values(stac) * 250)
 })
 
 test_that("the AgroDataCube gives the NDVI of fields, by id and by area", {

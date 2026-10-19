@@ -85,7 +85,7 @@ test_that("the NDVI downloads record their parameters, and repeat them", {
   first <- suppressMessages(gm_ndvi_month(poly, 2024, 2, save_params = f))
   p <- read_file(f)
   expect_equal(p$schema, "rNDC-gm_ndvi_month/1")
-  expect_equal(list(p$year, p$month, p$epsg), list(2024, 2, 32631))
+  expect_equal(list(p$year, p$month, p$epsg, p$scale), list(2024, 2, 32631, TRUE))
   expect_equal(p$roi$type, "Polygon")
   expect_null(p$endpoint)                               # not a NatureDataCube function
   expect_no_secrets(f)
@@ -111,8 +111,8 @@ test_that("the NDVI functions of the NatureDataCube record their parameters, and
   first <- suppressMessages(ndc_ndvi_stack(square_4326(), c("2024-02-01", "2024-03-31"), token = "t", clip = TRUE, save_params = f))
   p <- read_file(f)
   expect_equal(p$schema, "rNDC-ndc_ndvi_stack/1")
-  expect_equal(list(p$trange, p$collection, p$subset_crs, p$limit, p$clip),
-               list("2024-02-01T00:00:00Z/2024-03-31T00:00:00Z", "ndvi", 32631, 100, TRUE))
+  expect_equal(list(p$trange, p$collection, p$subset_crs, p$limit, p$clip, p$scale),
+               list("2024-02-01T00:00:00Z/2024-03-31T00:00:00Z", "ndvi", 32631, 100, TRUE, TRUE))
   expect_equal(p$endpoint, "https://example.org/api/")
   expect_no_secrets(f)
   first_urls <- urls; urls <- character()

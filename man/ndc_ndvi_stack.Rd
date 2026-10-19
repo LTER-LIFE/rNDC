@@ -12,6 +12,7 @@ ndc_ndvi_stack(
   subset_crs = ndvi_subset_crs,
   limit = 100,
   clip = FALSE,
+  scale = TRUE,
   params_file = NULL,
   save_params = NULL
 )
@@ -32,6 +33,9 @@ months of both are included.}
 
 \item{clip}{logical. If \code{TRUE}, the result is clipped to the area (cells outside it are \code{NA}); by default it covers
 the bounding box, like \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}.}
+
+\item{scale}{logical. The rasters hold digital numbers (0-255, NDVI = number / 250, see \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}); if \code{TRUE}
+(the default) the result is NDVI, otherwise it is the mean of the digital numbers.}
 
 \item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
 call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you

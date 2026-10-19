@@ -71,11 +71,12 @@ params_specs <- list(
                                                        limit = "count")),
   ndc_ndvi_stats = list(endpoint = TRUE, args = c(roi = "roi", collection = "text", trange = "trange", ndc_id = "texts")),
   ndc_ndvi_month = list(endpoint = TRUE, args = c(roi = "roi", year = "integer", month = "integer", collection = "text",
-                                                  subset_crs = "integer", limit = "count", clip = "flag")),
+                                                  subset_crs = "integer", limit = "count", clip = "flag", scale = "flag")),
   ndc_ndvi_stack = list(endpoint = TRUE, args = c(roi = "roi", trange = "trange", collection = "text",
-                                                  subset_crs = "integer", limit = "count", clip = "flag")),
-  gm_ndvi_month = list(endpoint = FALSE, args = c(roi = "roi", year = "integer", month = "integer", epsg = "integer")),
-  gm_ndvi_stack = list(endpoint = FALSE, args = c(roi = "roi", trange = "trange", epsg = "integer")),
+                                                  subset_crs = "integer", limit = "count", clip = "flag", scale = "flag")),
+  gm_ndvi_month = list(endpoint = FALSE, args = c(roi = "roi", year = "integer", month = "integer", epsg = "integer",
+                                                  scale = "flag")),
+  gm_ndvi_stack = list(endpoint = FALSE, args = c(roi = "roi", trange = "trange", epsg = "integer", scale = "flag")),
   adc_ndvi = list(endpoint = FALSE, args = c(roi = "roi", fieldid = "texts", trange = "trange", page_size = "count")),
   adc_weather_station = list(endpoint = FALSE, args = c(roi = "roi", page_size = "count", page_offset = "integer",
                                                         output_epsg = "any")),
@@ -275,10 +276,14 @@ params_apply <- function(name, path, env = parent.frame()) {
 
 # ---- NDVI of several months ----
 
+# The NDVI rasters of GroenMonitor hold digital numbers: NDVI = number / 250 (0 is no data, 1 is water; see its legend)
+ndvi_scale <- 250
+
 # The monthly mean NDVI of the months `month_seq` (the first day of each) as one stack: `files_of_month(year, month)`
 # gives the daily files of a month (the days with data), they are averaged (gm_month_mean(), which removes the files)
-# and the months are put on a common grid. NULL if no month has data. Shared by gm_ndvi_stack() and ndc_ndvi_stack().
-ndvi_stack_months <- function(month_seq, files_of_month) {
+# and the months are put on a common grid. NULL if no month has data. `scale` gives NDVI instead of the digital numbers.
+# Shared by gm_ndvi_stack() and ndc_ndvi_stack().
+ndvi_stack_months <- function(month_seq, scale, files_of_month) {
   raster_list <- list()
   for (m in as.list(month_seq)) {
     message("Processing ", format(m, "%B %Y"))
@@ -286,7 +291,7 @@ ndvi_stack_months <- function(month_seq, files_of_month) {
     month_m <- as.integer(format(m, "%m"))
 
     files <- files_of_month(year_m, month_m)  # (before the call: gm_month_mean() removes the files when it ends)
-    r_mean <- gm_month_mean(files, year_m, month_m)
+    r_mean <- gm_month_mean(files, year_m, month_m, scale)
     if (is.null(r_mean)) {
       message("No NDVI data available for ", format(m, "%B %Y"))
     } else {

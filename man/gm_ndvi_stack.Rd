@@ -8,6 +8,7 @@ gm_ndvi_stack(
   roi,
   trange,
   epsg = 32631,
+  scale = TRUE,
   params_file = NULL,
   save_params = NULL
 )
@@ -18,6 +19,9 @@ gm_ndvi_stack(
 \item{trange}{Date or character. The first and the last day of the period (two dates, or \code{"YYYY-MM-DD"} texts): the months of both are included.}
 
 \item{epsg}{integer. EPSG code of the CRS in which the bounding box is requested.}
+
+\item{scale}{logical. If \code{TRUE} (the default) the result is NDVI; otherwise the mean of the digital numbers (0-255) of
+the rasters, see \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}.}
 
 \item{params_file}{character. Optional path to a JSON file with the parameters of a retrieval, written by an earlier
 call with \code{save_params}, see \code{\link[=ndc_repeat]{ndc_repeat()}}. The file supplies the arguments that you do not give yourself; what you

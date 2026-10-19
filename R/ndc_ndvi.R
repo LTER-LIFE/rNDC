@@ -19,19 +19,23 @@ ndvi_subset_crs <- 32631L
 #' @param limit integer. Number of items per page of the search.
 #' @param clip logical. If `TRUE`, the result is clipped to the area (cells outside it are `NA`); by default it covers
 #'   the bounding box, like [gm_ndvi_month()].
+#' @param scale logical. The rasters hold digital numbers (0-255, NDVI = number / 250, see [gm_ndvi_month()]); if `TRUE`
+#'   (the default) the result is NDVI, otherwise it is the mean of the digital numbers.
 #' @param token character. API token.
 #' @inheritParams ndc_get
-#' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM`, or `NULL` if no data is available.
+#' @returns A single-layer `SpatRaster` named `ndvi_mean_YYYYMM` (NDVI, or the digital numbers with `scale = FALSE`), or
+#'   `NULL` if no data is available.
 #' @seealso [ndc_ndvi_stack()] for several months, [gm_ndvi_month()] to download from the GroenMonitor,
 #'   [ndc_ndvi_stats()] for the NDVI statistics of the project areas, [ndc_with_progress()] to follow the downloads, or
 #'   to stop them.
 #' @export
 ndc_ndvi_month <- function(roi, year, month, token = Sys.getenv("NDC_TOKEN"), collection = ndvi_collection,
-                           subset_crs = ndvi_subset_crs, limit = 100, clip = FALSE, params_file = NULL, save_params = NULL) {
+                           subset_crs = ndvi_subset_crs, limit = 100, clip = FALSE, scale = TRUE, params_file = NULL,
+                           save_params = NULL) {
   if (!is.null(params_file)) params_apply("ndc_ndvi_month", params_file)
   if (!is.null(save_params)) params_save_when_done("ndc_ndvi_month", save_params)
 
-  r <- ndc_ndvi_months(roi, as.Date(sprintf("%04d-%02d-01", year, month)), token, collection, subset_crs, limit, clip)
+  r <- ndc_ndvi_months(roi, as.Date(sprintf("%04d-%02d-01", year, month)), token, collection, subset_crs, limit, clip, scale)
   if (is.null(r)) NULL else r[[1]]
 }
 
@@ -49,20 +53,21 @@ ndc_ndvi_month <- function(roi, year, month, token = Sys.getenv("NDC_TOKEN"), co
 #'   downloads, or to stop them.
 #' @export
 ndc_ndvi_stack <- function(roi, trange, token = Sys.getenv("NDC_TOKEN"), collection = ndvi_collection,
-                           subset_crs = ndvi_subset_crs, limit = 100, clip = FALSE, params_file = NULL, save_params = NULL) {
+                           subset_crs = ndvi_subset_crs, limit = 100, clip = FALSE, scale = TRUE, params_file = NULL,
+                           save_params = NULL) {
   if (!is.null(params_file)) params_apply("ndc_ndvi_stack", params_file)
   if (!is.null(save_params)) params_save_when_done("ndc_ndvi_stack", save_params)
 
   dates <- trange_dates(trange)
   month_seq <- seq(as.Date(format(dates[1], "%Y-%m-01")), as.Date(format(dates[2], "%Y-%m-01")), by = "month")
-  ndc_ndvi_months(roi, month_seq, token, collection, subset_crs, limit, clip)
+  ndc_ndvi_months(roi, month_seq, token, collection, subset_crs, limit, clip, scale)
 }
 
 # Internal helpers shared by ndc_ndvi_month() and ndc_ndvi_stack()
 
 # The monthly means of the months `month_seq` (the first day of each): one search for all of them, the rasters of the
 # days with data, a stack with a layer per month with data (NULL if there is none).
-ndc_ndvi_months <- function(roi, month_seq, token, collection, subset_crs, limit, clip) {
+ndc_ndvi_months <- function(roi, month_seq, token, collection, subset_crs, limit, clip, scale) {
   last <- seq(max(month_seq), by = "month", length.out = 2)[2] - 1
   items <- ndc_ndvi_items(roi, min(month_seq), last, token, collection, limit)
 
@@ -74,7 +79,7 @@ ndc_ndvi_months <- function(roi, month_seq, token, collection, subset_crs, limit
   headers <- stac_make_headers(token)
   suffix <- stac_wcs_subset_suffix(roi, target_crs = subset_crs)
   done <- 0L
-  stack <- ndvi_stack_months(month_seq, function(year_m, month_m) {
+  stack <- ndvi_stack_months(month_seq, scale, function(year_m, month_m) {
     rows <- items[format(items$date, "%Y%m") == sprintf("%04d%02d", year_m, month_m), , drop = FALSE]
     files <- ndc_ndvi_download(rows, suffix, headers, tmpdir, done = done, total = nrow(items))
     done <<- done + nrow(rows)

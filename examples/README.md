@@ -9,7 +9,7 @@ Jupyter notebooks (R kernel) showing how to use rNDC. They need network access a
 | [`01_getting_started`](01_getting_started.ipynb) | Find datasets, define regions and dates of interest, search items and get metadata from *NatureDataCube*: `ndc_roi`, `ndc_trange`, `ndc_datasets`, `ndc_count`, `ndc_get` | `NDC_TOKEN` | ~1 min |
 | [`02_rasters`](02_rasters.ipynb) | Study sites, land use and nitrogen rasters for an area of interest: `ndc_sites`, `ndc_landuse_raster`, `ndc_nitrogen_raster` | `NDC_TOKEN` | ~1 min |
 | [`03_weather`](03_weather.ipynb) | KNMI weather data from *AgroDataCube*: `adc_weather_station`, `adc_weather_date`, `adc_weather_period`, `adc_weather_long_period` | `ADC_TOKEN` | ~30 s |
-| [`04_ndvi`](04_ndvi.ipynb) | Monthly average NDVI from *GroenMonitor*: `gm_ndvi_month`, `gm_ndvi_stack` | `NDC_TOKEN` (last section) | ~2 min |
+| [`04_ndvi`](04_ndvi.ipynb) | NDVI from *GroenMonitor* (`gm_ndvi_month`, `gm_ndvi_stack`), the same rasters through *NatureDataCube* (`ndc_ndvi_month`, `ndc_ndvi_stack`) and the NDVI of agricultural fields from *AgroDataCube* (`adc_ndvi`) | `NDC_TOKEN`, `ADC_TOKEN` | ~3 min |
 
 ## Advanced: the raw interfaces
 
