@@ -36,3 +36,14 @@ test_that("no items give no years, and API errors are passed on", {
   local_stac_api(items = list(), status = 500L)
   expect_error(ndc_nitrogen_years(token = "t"))
 })
+
+test_that("the AHN and soil map rasters have their collection, layers and years", {
+  expect_equal(ndc_ahn_collection(), "ahnmetrics")
+  expect_equal(ndc_ahn_layers(), c("dtm", "ohn"))
+  expect_equal(ndc_soil_collection(), "soiltypes")
+  local_stac_api(items = list(height_item("dtm", "2019-01-01"), height_item("ohn", "2022-01-01")))
+  expect_equal(ndc_ahn_years(token = "t"), c("2019", "2022"))
+  expect_equal(unlist(last_request_body()$collections), "ahnmetrics")
+  ndc_soil_years(token = "t")
+  expect_equal(unlist(last_request_body()$collections), "soiltypes")
+})

@@ -24,7 +24,7 @@ API tokens are read from environment variables (or can be passed through the `to
 
 | Variable | Used by |
 |---|---|
-| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `ndc_metadata`, `ndc_citation`, `stac_availability`, `ndc_landuse_raster`, `ndc_nitrogen_raster`, `ndc_ndvi_stats`, `ndc_ndvi_month`, `ndc_ndvi_stack`, `ndc_landuse_years`, `ndc_nitrogen_years` |
+| `NDC_TOKEN` | `ndc_get`, `ndc_count`, `ndc_datasets`, `ndc_metadata`, `ndc_citation`, `stac_availability`, `ndc_landuse_raster`, `ndc_nitrogen_raster`, `ndc_ahn_raster`, `ndc_ahn_stats`, `ndc_soil_raster`, `ndc_soil_legend`, `ndc_ndvi_stats`, `ndc_ndvi_month`, `ndc_ndvi_stack`, `ndc_landuse_years`, `ndc_nitrogen_years` |
 | `ADC_TOKEN` | `adc_get`, `adc_get_all`, `adc_weather_station`, `adc_weather_date`, `adc_weather_period`, `adc_weather_long_period` |
 
 For example, `Sys.setenv(NDC_TOKEN = "<your token>")`, or put it in your `.Renviron`. A missing or empty token stops the function at once, naming the variable to set.
@@ -52,6 +52,8 @@ The function names start with the source of the data (`ndc_` for the NatureDataC
 
 - [`ndc_landuse_raster`](R/ndc_landuse.R): Download the Land Use raster for an area of interest and year, clipped to the area.
 - [`ndc_nitrogen_raster`](R/ndc_nitrogen.R): Download the nitrogen rasters (`ntot`, `nox`, `nh3`) for an area of interest and year, clipped to the area.
+- [`ndc_ahn_raster`](R/ndc_ahn.R), [`ndc_ahn_stats`](R/ndc_ahn.R): Download the AHN height rasters (terrain height `dtm` and object height `ohn`, in metres) for an area of interest, clipped to the area, or summarise the heights in the area (area, minimum, maximum, mean and standard deviation). An area with very many cells is requested at a lower resolution.
+- [`ndc_soil_raster`](R/ndc_soil.R), [`ndc_soil_legend`](R/ndc_soil.R): Download the soil map (_Bodemkaart_) raster for an area of interest, and read the names and colours of its soil types.
 - [`ndc_landuse_years`, `ndc_nitrogen_years`, `ndc_landuse_default_year`, `ndc_nitrogen_layers`, `ndc_landuse_collection`](R/ndc_defaults.R): The years for which these rasters exist (read from the STAC API), and their defaults.
 - [`ndc_ndvi_stats`](R/ndc_ndvi_stats.R): Monthly NDVI statistics per polygon from the `ndvi-lter` / `ndvi-snl` collections.
 - [`ndc_ndvi_month`](R/ndc_ndvi.R), [`ndc_ndvi_stack`](R/ndc_ndvi.R): Monthly average NDVI rasters, found through the `ndvi` collection: the items are the daily *GroenMonitor* coverages (the same rasters as `gm_ndvi_month` / `gm_ndvi_stack`), so only the days with data are downloaded.

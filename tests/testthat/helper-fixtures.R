@@ -240,3 +240,44 @@ ndvi_feature <- function(fieldid, date, avg = 0.5, sd = 0.1) {
   list(type = "Feature", geometry = NULL,
        properties = list(datum = date, ndvi_stddev = sd, ndvi_avg = avg, fieldid = fieldid, daynr = 1L))
 }
+
+# ---- AHN and soil map ----
+
+# an item of the AHN collection (`layer` "dtm" or "ohn") or of the soil map, with a title that states the cell size
+height_item <- function(layer = "dtm", date = "2019-01-01", size = "5m") {
+  item <- stac_item(paste0("ahn-", layer, "-", substr(date, 1, 4)), layer = layer, date = date)
+  item$properties$title <- paste0("AHN ", toupper(layer), " ", substr(date, 1, 4), " (", size, ")")
+  item
+}
+
+ahn_items <- function() list(height_item("dtm", "2019-01-01", "5m"), height_item("ohn", "2022-01-01", "2.5m"))
+
+# a download that writes a raster of the values 1:16 (a grid of `rows` rows)
+mock_height_download <- function(urls = NULL, rows = function(href) 4L) {
+  function(href, outfile, headers, overwrite = TRUE, ...) {
+    if (!is.null(urls)) urls$all <- c(urls$all, href)
+    r <- terra::rast(nrows = rows(href), ncols = 4, xmin = 0, xmax = 1, ymin = 0, ymax = 1, crs = "EPSG:4326",
+                     vals = seq_len(rows(href) * 4))
+    terra::writeRaster(r, outfile, overwrite = TRUE)
+    outfile
+  }
+}
+
+# an item of the soil map, with the legend asset, and the stub of its legend in JSON
+soil_item <- function(date = "2025-01-01") {
+  item <- stac_item(paste0("soil-", substr(date, 1, 4)), layer = "bodemkaart", date = date)
+  item$properties$title <- paste0("Soil Map ", substr(date, 1, 4), " (5m, UTM31N)")
+  item$assets$legend <- list(href = "https://example.org/geoserver/ows?service=WMS&layer=ndc%3Asoil&request=GetLegendGraphic&format=image%2Fpng&width=20")
+  item
+}
+
+legend_json <- function() {
+  entry <- function(code, name, color) list(label = paste0(code, " - ", name), quantity = as.character(code), color = color)
+  list(Legend = list(list(rules = list(list(symbolizers = list(list(Raster = list(colormap = list(entries = list(
+    entry(1, "Veengronden", "#1920A7"), entry(14, "Leemgronden", "#FE021E")))))))))))
+}
+
+local_legend <- function(env = parent.frame()) {
+  webmockr::stub_request("get", "https://example.org/geoserver/ows?service=WMS&layer=ndc%3Asoil&request=GetLegendGraphic&format=application%2Fjson&width=20") |>
+    webmockr::to_return(body = json_body(legend_json()), headers = json_header)
+}

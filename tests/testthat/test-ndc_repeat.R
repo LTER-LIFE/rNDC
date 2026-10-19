@@ -4,7 +4,7 @@ tmp_json <- function(env = parent.frame()) withr::local_tempfile(fileext = ".jso
 
 test_that("every function with parameters in a file has the arguments that the file is made of", {
   expect_setequal(names(params_specs),
-                  c("ndc_get", "ndc_landuse_raster", "ndc_nitrogen_raster", "ndc_ndvi_stats", "ndc_ndvi_month",
+                  c("ndc_get", "ndc_landuse_raster", "ndc_nitrogen_raster", "ndc_ahn_raster", "ndc_ahn_stats", "ndc_soil_raster", "ndc_ndvi_stats", "ndc_ndvi_month",
                     "ndc_ndvi_stack", "gm_ndvi_month", "gm_ndvi_stack", "adc_ndvi", "adc_weather_station", "adc_weather_date", "adc_weather_period",
                     "adc_weather_long_period", "adc_get", "adc_get_all", "gm_get"))
   for (name in names(params_specs)) {
@@ -124,6 +124,39 @@ test_that("the NDVI functions of the NatureDataCube record their parameters, and
   month <- suppressMessages(ndc_ndvi_month(square_4326(), 2024, 2, token = "t", save_params = g))
   expect_equal(list(read_file(g)$year, read_file(g)$month), list(2024, 2))
   expect_equal(names(suppressMessages(ndc_ndvi_month(params_file = g, token = "t"))), names(month))
+})
+
+test_that("the AHN and soil map functions record their parameters, and repeat them", {
+  local_stac_api(ahn_items())
+  urls <- character()
+  base <- mock_height_download()
+  local_mocked_bindings(stac_download_one = function(href, ...) { urls <<- c(urls, href); base(href, ...) })
+  f <- tmp_json()
+  first <- ndc_ahn_raster(square_4326(), layers = "dtm", year = 2019, token = "t", output_dir = withr::local_tempdir(),
+                          scale = FALSE, scalefactor = 0.5, save_params = f)
+  p <- read_file(f)
+  expect_equal(p$schema, "rNDC-ndc_ahn_raster/1")
+  expect_equal(list(unlist(p$layers), unlist(p$year), p$collection, p$scale, p$scalefactor, p$max_cells),
+               list("dtm", "2019", "ahnmetrics", FALSE, 0.5, 5e7))
+  expect_equal(p$endpoint, "https://example.org/api/")
+  expect_no_secrets(f)
+  first_urls <- urls; urls <- character()
+  again <- ndc_repeat(f, token = "t", output_dir = withr::local_tempdir())
+  expect_equal(names(again$rasters), names(first$rasters))
+  expect_equal(urls, first_urls)
+
+  g <- tmp_json()
+  stats <- ndc_ahn_stats(square_4326(), layers = "dtm", token = "t", save_params = g)
+  expect_equal(read_file(g)$schema, "rNDC-ndc_ahn_stats/1")
+  expect_identical(ndc_ahn_stats(params_file = g, token = "t"), stats)
+
+  local_stac_api(list(soil_item()))
+  local_legend()
+  h <- tmp_json()
+  soil <- ndc_soil_raster(square_4326(), token = "t", output_dir = withr::local_tempdir(), save_params = h)
+  expect_equal(read_file(h)$schema, "rNDC-ndc_soil_raster/1")
+  expect_equal(names(ndc_soil_raster(params_file = h, token = "t", output_dir = withr::local_tempdir())$rasters),
+               names(soil$rasters))
 })
 
 test_that("adc_ndvi records its parameters, and repeats them", {

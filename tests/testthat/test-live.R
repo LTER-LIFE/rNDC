@@ -156,3 +156,26 @@ test_that("the AgroDataCube gives the NDVI of fields, by id and by area", {
   by_area <- adc_ndvi(roi = c(5.65, 52.00, 5.655, 52.005), trange = c("2023-06-01", "2023-06-01"))
   expect_gt(nrow(by_area), 1)
 })
+
+test_that("the AHN statistics of the NatureDataCube agree with those of the AgroDataCube", {
+  skip_unless_live()
+  roi <- c(5.65, 52.00, 5.67, 52.02)
+  stats <- ndc_ahn_stats(roi, layers = "dtm", scale = FALSE)
+  wkt <- "POLYGON((5.65 52.00,5.67 52.00,5.67 52.02,5.65 52.02,5.65 52.00))"
+  adc <- adc_get(url = adc_url("AHN", params = c(geometry = wkt, epsg = "4326")))$features[[1]]$properties
+  expect_equal(stats$min, adc$min, tolerance = 0.001)   # (the AgroDataCube has decimals)
+  expect_equal(stats$max, adc$max, tolerance = 0.001)
+  expect_equal(stats$mean, adc$mean, tolerance = 0.01)
+  expect_equal(stats$area, adc$area, tolerance = 0.01)
+  heights <- ndc_ahn_raster(roi)
+  expect_equal(names(heights$rasters), c("AHN_DTM_2019", "AHN_OHN_2022"))
+  expect_equal(terra::global(heights$rasters[[1]], "max", na.rm = TRUE)[[1]] * 100, stats$max)
+})
+
+test_that("the soil map raster has the codes of the legend", {
+  skip_unless_live()
+  soil <- ndc_soil_raster(c(5.65, 52.00, 5.67, 52.02))
+  expect_equal(names(soil$rasters), "SOIL_2025")
+  expect_true(all(c("code", "label", "color") %in% names(soil$legend)))
+  expect_true(all(sort(unique(terra::values(soil$rasters[[1]]))) %in% c(soil$legend$code, 16)))
+})

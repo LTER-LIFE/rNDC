@@ -5,9 +5,14 @@
 \alias{ndc_landuse_collection}
 \alias{ndc_landuse_default_year}
 \alias{ndc_nitrogen_layers}
+\alias{ndc_ahn_collection}
+\alias{ndc_ahn_layers}
+\alias{ndc_soil_collection}
 \alias{ndc_landuse_years}
 \alias{ndc_nitrogen_years}
-\title{Land use and nitrogen rasters: defaults and available years}
+\alias{ndc_ahn_years}
+\alias{ndc_soil_years}
+\title{Defaults and available years of the thematic rasters}
 \usage{
 ndc_landuse_collection()
 
@@ -15,20 +20,32 @@ ndc_landuse_default_year()
 
 ndc_nitrogen_layers()
 
+ndc_ahn_collection()
+
+ndc_ahn_layers()
+
+ndc_soil_collection()
+
 ndc_landuse_years(token = Sys.getenv("NDC_TOKEN"))
 
 ndc_nitrogen_years(token = Sys.getenv("NDC_TOKEN"))
+
+ndc_ahn_years(token = Sys.getenv("NDC_TOKEN"))
+
+ndc_soil_years(token = Sys.getenv("NDC_TOKEN"))
 }
 \arguments{
 \item{token}{character. API token.}
 }
 \value{
-\code{ndc_landuse_collection()}: the STAC collection of the land use rasters; \code{ndc_landuse_default_year()}:
-the default year (integer); \code{ndc_nitrogen_layers()}: the nitrogen layers (also their STAC collections);
-\code{ndc_landuse_years()} and \code{ndc_nitrogen_years()}: character vector with the years that have items,
-read from the STAC API (an error if the API cannot be reached).
+\code{ndc_landuse_collection()}, \code{ndc_ahn_collection()} and \code{ndc_soil_collection()}: the STAC collection of the
+rasters; \code{ndc_landuse_default_year()}: the default year (integer); \code{ndc_nitrogen_layers()}: the nitrogen layers
+(also their STAC collections); \code{ndc_ahn_layers()}: the AHN layers (\code{"dtm"}, the terrain height, and \code{"ohn"}, the
+object height); \code{ndc_landuse_years()}, \code{ndc_nitrogen_years()}, \code{ndc_ahn_years()} and \code{ndc_soil_years()}: character
+vector with the years that have items, read from the STAC API (an error if the API cannot be reached).
 }
 \description{
 The collection and default year of the land use rasters (see \code{\link[=ndc_landuse_raster]{ndc_landuse_raster()}}), the layers of the
-nitrogen rasters (see \code{\link[=ndc_nitrogen_raster]{ndc_nitrogen_raster()}}), and the years for which they exist in the NatureDataCube.
+nitrogen rasters (see \code{\link[=ndc_nitrogen_raster]{ndc_nitrogen_raster()}}), the collections and layers of the AHN (see \code{\link[=ndc_ahn_raster]{ndc_ahn_raster()}}) and
+soil map (see \code{\link[=ndc_soil_raster]{ndc_soil_raster()}}) rasters, and the years for which they exist in the NatureDataCube.
 }
