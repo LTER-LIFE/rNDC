@@ -14,9 +14,8 @@ stac_clip_raster_to_aoi <- function(r, roi, aoi = NULL) {
   }
 
   aoi_proj <- terra::project(aoi_vect, r_crs)
-  r_clip <- terra::crop(r, aoi_proj)
-  r_clip <- terra::mask(r_clip, aoi_proj)
-  r_clip
+  # crop and mask in one pass (two steps make a second copy of a large raster)
+  terra::crop(r, aoi_proj, mask = TRUE)
 }
 
 #' @rdname stac_helpers
@@ -44,7 +43,7 @@ stac_title_resolution <- function(title) {
 # The WCS scale factor of a request for the bounding box of `roi` from a raster with cells of `resolution` metres:
 # `scalefactor` if it is given; otherwise 1, unless the request would have more than `max_cells` cells, and then the
 # factor that makes it have `max_cells` (and a message says so). 1 when the resolution is not known.
-stac_scalefactor <- function(roi, resolution, subset_crs, scalefactor = NULL, max_cells = 5e7) {
+stac_scalefactor <- function(roi, resolution, subset_crs, scalefactor = NULL, max_cells = 2e7) {
   if (!is.null(scalefactor)) {
     if (!is.numeric(scalefactor) || length(scalefactor) != 1 || is.na(scalefactor) || scalefactor <= 0 || scalefactor > 1) {
       stop("`scalefactor` must be a number above 0 and up to 1.", call. = FALSE)

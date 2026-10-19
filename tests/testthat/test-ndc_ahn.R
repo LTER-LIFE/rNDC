@@ -95,3 +95,14 @@ test_that("the downloads are reported one by one", {
   ))
   expect_equal(seen[[2]], list("Downloading AHN_OHN_2022 (2/2)", 2L, 2L))
 })
+
+test_that("the statistics are made one layer at a time, for the layers that have items", {
+  local_stac_api(list(height_item("dtm", "2019-01-01", "5m")))        # no object height here
+  seen <- character()
+  base <- mock_height_download()
+  local_mocked_bindings(stac_download_one = function(href, ...) { seen <<- c(seen, href); base(href, ...) })
+  stats <- ndc_ahn_stats(square_4326(0, 0, 1, 1), token = "t", max_cells = Inf)
+  expect_equal(stats$layer, "dtm")
+  expect_length(seen, 1)
+  expect_error(ndc_ahn_stats(square_4326(0, 0, 1, 1), layers = "ohn", token = "t"), "No AHN items matched")
+})

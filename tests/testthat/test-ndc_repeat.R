@@ -137,7 +137,7 @@ test_that("the AHN and soil map functions record their parameters, and repeat th
   p <- read_file(f)
   expect_equal(p$schema, "rNDC-ndc_ahn_raster/1")
   expect_equal(list(unlist(p$layers), unlist(p$year), p$collection, p$scale, p$scalefactor, p$max_cells),
-               list("dtm", "2019", "ahnmetrics", FALSE, 0.5, 5e7))
+               list("dtm", "2019", "ahnmetrics", FALSE, 0.5, 2e7))
   expect_equal(p$endpoint, "https://example.org/api/")
   expect_no_secrets(f)
   first_urls <- urls; urls <- character()

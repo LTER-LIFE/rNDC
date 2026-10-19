@@ -4,7 +4,7 @@
 ahn_collection <- "ahnmetrics"
 ahn_layers <- c("dtm", "ohn")
 ahn_subset_crs <- 32631L
-ahn_max_cells <- 5e7
+ahn_max_cells <- 2e7
 # the rasters hold centimetres
 ahn_cm_per_m <- 100
 
@@ -144,16 +144,19 @@ ndc_ahn_stats <- function(roi,
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(dir, recursive = TRUE, force = TRUE), add = TRUE)
 
-  res <- ndc_ahn_raster(roi, layers = layers, year = year, token = token, collection = collection, output_dir = dir,
-                        limit = limit, subset_crs = subset_crs, scale = scale, scalefactor = scalefactor,
-                        max_cells = max_cells)
-  meta <- res$metadata
-  rows <- lapply(seq_along(res$rasters), function(i) {
-    r <- res$rasters[[i]]
-    stats <- terra::global(r, c("min", "max", "mean", "sd"), na.rm = TRUE)
-    n <- terra::global(!is.na(r), "sum")[[1]]
-    tibble::tibble(layer = meta$layer[i], year = meta$year[i], area = n * prod(terra::res(r)),
-                   min = stats$min, max = stats$max, mean = stats$mean, sd = stats$sd, n_cells = n)
+  # one layer at a time: the rasters of a large area are big, and only their statistics are kept
+  layers <- ahn_check_layers(layers)
+  layers <- intersect(layers, ahn_collect_metadata(roi, token, collection, layers, year, limit)$layer)   # the ones with items
+  rows <- lapply(layers, function(layer) {
+    res <- ndc_ahn_raster(roi, layers = layer, year = year, token = token, collection = collection, output_dir = dir,
+                          limit = limit, subset_crs = subset_crs, scale = scale, scalefactor = scalefactor,
+                          max_cells = max_cells)
+    dplyr::bind_rows(lapply(seq_along(res$rasters), function(i) {
+      r <- res$rasters[[i]]
+      stats <- terra::global(r, c("min", "max", "mean", "sd", "notNA"), na.rm = TRUE)
+      tibble::tibble(layer = res$metadata$layer[i], year = res$metadata$year[i], area = stats$notNA * prod(terra::res(r)),
+                     min = stats$min, max = stats$max, mean = stats$mean, sd = stats$sd, n_cells = stats$notNA)
+    }))
   })
   dplyr::bind_rows(rows)
 }

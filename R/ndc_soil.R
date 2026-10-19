@@ -3,7 +3,7 @@
 
 soil_collection <- "soiltypes"
 soil_subset_crs <- 32631L
-soil_max_cells <- 5e7
+soil_max_cells <- 2e7
 
 # The items of the soil collection for `roi` and the `year`s asked for
 soil_collect_metadata <- function(roi, token, collection = soil_collection, year = NULL, limit = 100) {

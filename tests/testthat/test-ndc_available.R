@@ -63,7 +63,7 @@ test_that("the period goes to the search, and limits the external datasets", {
   expect_equal(last_request_body()$datetime, "1990-01-01T00:00:00Z/1990-12-31T00:00:00Z")
   expect_equal(a$available[a$id == "agricultural-fields"], FALSE)
   expect_equal(a$available[a$id == "weather"], TRUE)
-  expect_equal(a$available[a$id == "ahn"], TRUE)       # no time dimension
+  expect_false(any(c("soil-map", "ahn") %in% a$id))    # they are collections of the NatureDataCube now
 })
 
 test_that("an area outside the Netherlands has none of the external datasets", {

@@ -1,8 +1,10 @@
 #' Datasets that are not in the NatureDataCube
 #'
 #' The datasets that rNDC retrieves from other services than the NatureDataCube STAC API (the AgroDataCube REST API
-#' and the GroenMonitor WCS server), with the coverage that is known for them: the period they start in, and that
-#' they cover the Netherlands. These services publish no catalogue that can be asked, so this is the information
+#' and the GroenMonitor WCS server): Weather and Agricultural fields of the AgroDataCube, and the NDVI rasters of the
+#' GroenMonitor (which the STAC collection `ndvi` also describes). The soil map and the AHN are not here: the
+#' NatureDataCube has them (collections `soiltypes` and `ahnmetrics`). The coverage that is known for them is the period
+#' they start in, and that they cover the Netherlands. These services publish no catalogue that can be asked, so this is the information
 #' of the documentation of the providers and of what was found when the package was written (it is checked
 #' against the live services by the tests of the package that run on request): it is not read from the
 #' services when it is used. [ndc_available()] uses it for the datasets that are not in the STAC catalogue.
@@ -26,19 +28,16 @@
 ndc_external_datasets <- function() {
   adc <- "https://agrodatacube.wur.nl/"
   tibble::tibble(
-    id = c("weather", "soil-map", "ahn", "agricultural-fields", "groenmonitor-ndvi"),
-    title = c("Weather (KNMI daily observations)", "Soil map (soil types)", "Elevation (AHN)",
-              "Agricultural fields (crop parcels)", "NDVI rasters (GroenMonitor)"),
-    source = c("AgroDataCube", "AgroDataCube", "AgroDataCube", "AgroDataCube", "GroenMonitor"),
-    url = c(adc, adc, adc, adc, "https://www.groenmonitor.nl/"),
-    service = c("Meteo_data", "Soiltypes", "AHN", "Fields", "WCS"),
-    start = as.Date(c("1970-01-01", NA, NA, "2009-01-01", "2017-05-26")),
-    end = as.Date(rep(NA, 5)),
+    id = c("weather", "agricultural-fields", "groenmonitor-ndvi"),
+    title = c("Weather (KNMI daily observations)", "Agricultural fields (crop parcels)", "NDVI rasters (GroenMonitor)"),
+    source = c("AgroDataCube", "AgroDataCube", "GroenMonitor"),
+    url = c(adc, adc, "https://www.groenmonitor.nl/"),
+    service = c("Meteo_data", "Fields", "WCS"),
+    start = as.Date(c("1970-01-01", "2009-01-01", "2017-05-26")),
+    end = as.Date(rep(NA, 3)),
     region = "Netherlands",
-    stac_collection = c(NA, NA, NA, NA, "ndvi"),
+    stac_collection = c(NA, NA, "ndvi"),
     note = c("Observations of the KNMI stations. The station closest to an area may start later than 1970.",
-             "Soil types of the Netherlands. No time dimension.",
-             "Elevation of the Netherlands. No time dimension.",
              "Field geometries and crop types per year; 2008 and earlier have none.",
              "Daily NDVI of the Netherlands; the same data as the STAC collection 'ndvi'.")
   )

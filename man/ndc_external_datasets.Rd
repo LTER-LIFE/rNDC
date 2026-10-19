@@ -22,8 +22,10 @@ datasets are updated, \code{end} is \code{NA} for "to the present";
 }
 \description{
 The datasets that rNDC retrieves from other services than the NatureDataCube STAC API (the AgroDataCube REST API
-and the GroenMonitor WCS server), with the coverage that is known for them: the period they start in, and that
-they cover the Netherlands. These services publish no catalogue that can be asked, so this is the information
+and the GroenMonitor WCS server): Weather and Agricultural fields of the AgroDataCube, and the NDVI rasters of the
+GroenMonitor (which the STAC collection \code{ndvi} also describes). The soil map and the AHN are not here: the
+NatureDataCube has them (collections \code{soiltypes} and \code{ahnmetrics}). The coverage that is known for them is the period
+they start in, and that they cover the Netherlands. These services publish no catalogue that can be asked, so this is the information
 of the documentation of the providers and of what was found when the package was written (it is checked
 against the live services by the tests of the package that run on request): it is not read from the
 services when it is used. \code{\link[=ndc_available]{ndc_available()}} uses it for the datasets that are not in the STAC catalogue.
