@@ -134,3 +134,23 @@ test_that("the years of the land use and nitrogen rasters are known", {
   expect_true(all(c("2024", "2025") %in% ndc_nitrogen_years()))
 })
 
+
+test_that("NDVI through the NatureDataCube equals the download from GroenMonitor", {
+  skip_unless_live()
+  roi <- c(5.65, 52.00, 5.67, 52.02)
+  stac <- suppressMessages(ndc_ndvi_month(roi, 2023, 6))
+  direct <- suppressMessages(gm_ndvi_month(roi, 2023, 6))
+  expect_equal(names(stac), "ndvi_mean_202306")
+  expect_true(terra::compareGeom(stac, direct, stopOnError = FALSE))
+  expect_equal(terra::values(stac), terra::values(direct))
+})
+
+test_that("the AgroDataCube gives the NDVI of fields, by id and by area", {
+  skip_unless_live()
+  by_id <- adc_ndvi(fieldid = "23032422", trange = c("2023-06-01", "2023-06-10"))
+  expect_equal(names(by_id), c("fieldid", "date", "ndvi_avg", "ndvi_stddev"))
+  expect_gt(nrow(by_id), 0)
+  expect_true(all(by_id$ndvi_avg > -1 & by_id$ndvi_avg < 1))
+  by_area <- adc_ndvi(roi = c(5.65, 52.00, 5.655, 52.005), trange = c("2023-06-01", "2023-06-01"))
+  expect_gt(nrow(by_area), 1)
+})

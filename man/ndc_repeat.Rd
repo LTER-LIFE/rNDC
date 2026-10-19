@@ -22,7 +22,8 @@ without having to know which function it is for.
 }
 \details{
 The functions with \code{save_params} and \code{params_file} are \code{\link[=ndc_get]{ndc_get()}}, \code{\link[=ndc_landuse_raster]{ndc_landuse_raster()}}, \code{\link[=ndc_nitrogen_raster]{ndc_nitrogen_raster()}},
-\code{\link[=ndc_ndvi_stats]{ndc_ndvi_stats()}}, \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}, \code{\link[=gm_ndvi_stack]{gm_ndvi_stack()}}, \code{\link[=adc_weather_station]{adc_weather_station()}},
+\code{\link[=ndc_ndvi_stats]{ndc_ndvi_stats()}}, \code{\link[=ndc_ndvi_month]{ndc_ndvi_month()}}, \code{\link[=ndc_ndvi_stack]{ndc_ndvi_stack()}}, \code{\link[=gm_ndvi_month]{gm_ndvi_month()}}, \code{\link[=gm_ndvi_stack]{gm_ndvi_stack()}}, \code{\link[=adc_ndvi]{adc_ndvi()}},
+\code{\link[=adc_weather_station]{adc_weather_station()}},
 \code{\link[=adc_weather_date]{adc_weather_date()}}, \code{\link[=adc_weather_period]{adc_weather_period()}}, \code{\link[=adc_weather_long_period]{adc_weather_long_period()}}, \code{\link[=adc_get]{adc_get()}}, \code{\link[=adc_get_all]{adc_get_all()}} and
 \code{\link[=gm_get]{gm_get()}}. A function with \code{save_params} writes the file when it has finished without an error (\code{ndc_get()}: when
 the search has succeeded). \code{params_file} supplies the arguments that you do not give yourself; what you give overrides the

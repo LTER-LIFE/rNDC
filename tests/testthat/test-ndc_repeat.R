@@ -4,8 +4,8 @@ tmp_json <- function(env = parent.frame()) withr::local_tempfile(fileext = ".jso
 
 test_that("every function with parameters in a file has the arguments that the file is made of", {
   expect_setequal(names(params_specs),
-                  c("ndc_get", "ndc_landuse_raster", "ndc_nitrogen_raster", "ndc_ndvi_stats", "gm_ndvi_month",
-                    "gm_ndvi_stack", "adc_weather_station", "adc_weather_date", "adc_weather_period",
+                  c("ndc_get", "ndc_landuse_raster", "ndc_nitrogen_raster", "ndc_ndvi_stats", "ndc_ndvi_month",
+                    "ndc_ndvi_stack", "gm_ndvi_month", "gm_ndvi_stack", "adc_ndvi", "adc_weather_station", "adc_weather_date", "adc_weather_period",
                     "adc_weather_long_period", "adc_get", "adc_get_all", "gm_get"))
   for (name in names(params_specs)) {
     spec <- params_specs[[name]]
@@ -101,6 +101,51 @@ test_that("the NDVI downloads record their parameters, and repeat them", {
   first_urls <- urls; urls <- character()
   expect_equal(names(suppressMessages(gm_ndvi_stack(params_file = g))), names(stack))
   expect_equal(urls, first_urls)
+})
+
+test_that("the NDVI functions of the NatureDataCube record their parameters, and repeat them", {
+  local_stac_api(ndvi_stac_items())
+  urls <- character()
+  local_mocked_bindings(stac_download_one = function(href, ...) { urls <<- c(urls, href); mock_download(href, ...) })
+  f <- tmp_json()
+  first <- suppressMessages(ndc_ndvi_stack(square_4326(), c("2024-02-01", "2024-03-31"), token = "t", clip = TRUE, save_params = f))
+  p <- read_file(f)
+  expect_equal(p$schema, "rNDC-ndc_ndvi_stack/1")
+  expect_equal(list(p$trange, p$collection, p$subset_crs, p$limit, p$clip),
+               list("2024-02-01T00:00:00Z/2024-03-31T00:00:00Z", "ndvi", 32631, 100, TRUE))
+  expect_equal(p$endpoint, "https://example.org/api/")
+  expect_no_secrets(f)
+  first_urls <- urls; urls <- character()
+  again <- suppressMessages(ndc_repeat(f, token = "t"))
+  expect_equal(names(again), names(first))
+  expect_equal(urls, first_urls)
+
+  g <- tmp_json()
+  month <- suppressMessages(ndc_ndvi_month(square_4326(), 2024, 2, token = "t", save_params = g))
+  expect_equal(list(read_file(g)$year, read_file(g)$month), list(2024, 2))
+  expect_equal(names(suppressMessages(ndc_ndvi_month(params_file = g, token = "t"))), names(month))
+})
+
+test_that("adc_ndvi records its parameters, and repeats them", {
+  local_mocked_bindings(
+    adc_get = function(option, params, ...) list(features = list(ndvi_feature(as.integer(params[["fieldid"]]), "2024-01-01"))),
+    adc_get_all = function(...) list(features = list(ndvi_feature(5L, "2024-01-01")))
+  )
+  f <- tmp_json()
+  first <- adc_ndvi(fieldid = c(1, 2), trange = c("2024-01-01", "2024-01-01"), token = "SECRET-1", save_params = f)
+  p <- read_file(f)
+  expect_equal(p$schema, "rNDC-adc_ndvi/1")
+  expect_equal(unlist(p$fieldid), c("1", "2"))
+  expect_null(p$roi)
+  expect_null(p$endpoint)
+  expect_no_secrets(f)
+  expect_identical(adc_ndvi(params_file = f, token = "SECRET-1"), first)
+
+  g <- tmp_json()
+  by_area <- adc_ndvi(roi = square_4326(), trange = c("2024-01-01", "2024-01-01"), token = "SECRET-1", save_params = g)
+  expect_equal(read_file(g)$roi$type, "Polygon")
+  expect_null(read_file(g)$fieldid)
+  expect_identical(adc_ndvi(params_file = g, token = "SECRET-1"), by_area)
 })
 
 test_that("the weather functions record their parameters, and repeat them", {

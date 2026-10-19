@@ -70,8 +70,13 @@ params_specs <- list(
   ndc_nitrogen_raster = list(endpoint = TRUE, args = c(roi = "roi", year = "any", layers = "texts", collections = "texts",
                                                        limit = "count")),
   ndc_ndvi_stats = list(endpoint = TRUE, args = c(roi = "roi", collection = "text", trange = "trange", ndc_id = "texts")),
+  ndc_ndvi_month = list(endpoint = TRUE, args = c(roi = "roi", year = "integer", month = "integer", collection = "text",
+                                                  subset_crs = "integer", limit = "count", clip = "flag")),
+  ndc_ndvi_stack = list(endpoint = TRUE, args = c(roi = "roi", trange = "trange", collection = "text",
+                                                  subset_crs = "integer", limit = "count", clip = "flag")),
   gm_ndvi_month = list(endpoint = FALSE, args = c(roi = "roi", year = "integer", month = "integer", epsg = "integer")),
   gm_ndvi_stack = list(endpoint = FALSE, args = c(roi = "roi", trange = "trange", epsg = "integer")),
+  adc_ndvi = list(endpoint = FALSE, args = c(roi = "roi", fieldid = "texts", trange = "trange", page_size = "count")),
   adc_weather_station = list(endpoint = FALSE, args = c(roi = "roi", page_size = "count", page_offset = "integer",
                                                         output_epsg = "any")),
   adc_weather_date = list(endpoint = FALSE, args = c(station = "any", date = "date", page_size = "count",
@@ -266,4 +271,44 @@ params_apply <- function(name, path, env = parent.frame()) {
     if (eval(call("missing", as.name(arg)), env)) assign(arg, file[[arg]], envir = env)
   }
   invisible(file)
+}
+
+# ---- NDVI of several months ----
+
+# The monthly mean NDVI of the months `month_seq` (the first day of each) as one stack: `files_of_month(year, month)`
+# gives the daily files of a month (the days with data), they are averaged (gm_month_mean(), which removes the files)
+# and the months are put on a common grid. NULL if no month has data. Shared by gm_ndvi_stack() and ndc_ndvi_stack().
+ndvi_stack_months <- function(month_seq, files_of_month) {
+  raster_list <- list()
+  for (m in as.list(month_seq)) {
+    message("Processing ", format(m, "%B %Y"))
+    year_m <- lubridate::year(m)
+    month_m <- as.integer(format(m, "%m"))
+
+    files <- files_of_month(year_m, month_m)  # (before the call: gm_month_mean() removes the files when it ends)
+    r_mean <- gm_month_mean(files, year_m, month_m)
+    if (is.null(r_mean)) {
+      message("No NDVI data available for ", format(m, "%B %Y"))
+    } else {
+      raster_list[[length(raster_list) + 1]] <- r_mean
+    }
+  }
+
+  if (length(raster_list) == 0) {
+    message("No NDVI data available for the selected range")
+    return(NULL)
+  }
+
+  # The WCS snaps each month's coverage to its own acquisition grid, so the monthly means can come back on
+  # slightly different extents, which rast() cannot combine. Align them to the largest one (nothing is cropped).
+  # The layer names (ndvi_mean_YYYYMM) are kept, also when some months had no data.
+  if (length(raster_list) > 1) {
+    ref <- raster_list[[which.max(vapply(raster_list, terra::ncell, numeric(1)))]]
+    raster_list <- lapply(raster_list, function(r) {
+      if (terra::compareGeom(ref, r, stopOnError = FALSE, messages = FALSE)) r
+      else terra::resample(r, ref, method = "bilinear")
+    })
+  }
+
+  terra::rast(raster_list)
 }

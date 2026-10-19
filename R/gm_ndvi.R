@@ -59,44 +59,15 @@ gm_ndvi_stack <- function(roi, trange, epsg = 32631, params_file = NULL, save_pa
 
   n_days <- sum(as.integer(ceiling_date(month_seq, "month") - month_seq))
   done_days <- 0L
-  raster_list <- list()
-
-  for (m in as.list(month_seq)) {
-    message("Processing ", format(m, "%B %Y"))
-    year_m <- year(m)
-    month_m <- as.integer(format(m, "%m"))
-
+  ndvi_stack_months(month_seq, function(year_m, month_m) {
+    first <- as.Date(sprintf("%04d-%02d-01", year_m, month_m))
     files <- gm_download_month(year_m, month_m, bbox, tmpdir, done = done_days, total = n_days)
-    done_days <- done_days + as.integer(ceiling_date(m, "month") - m)
-
-    r_mean <- gm_month_mean(files, year_m, month_m)
-    if (is.null(r_mean)) {
-      message("No NDVI data available for ", format(m, "%B %Y"))
-    } else {
-      raster_list[[length(raster_list) + 1]] <- r_mean
-    }
-  }
-
-  if (length(raster_list) == 0) {
-    message("No NDVI data available for the selected range")
-    return(NULL)
-  }
-
-  # The WCS snaps each month's coverage to its own acquisition grid, so the monthly means can come back on
-  # slightly different extents, which rast() cannot combine. Align them to the largest one (nothing is cropped).
-  # The layer names (ndvi_mean_YYYYMM) are kept, also when some months had no data.
-  if (length(raster_list) > 1) {
-    ref <- raster_list[[which.max(vapply(raster_list, terra::ncell, numeric(1)))]]
-    raster_list <- lapply(raster_list, function(r) {
-      if (terra::compareGeom(ref, r, stopOnError = FALSE, messages = FALSE)) r
-      else terra::resample(r, ref, method = "bilinear")
-    })
-  }
-
-  terra::rast(raster_list)
+    done_days <<- done_days + as.integer(ceiling_date(first, "month") - first)
+    files
+  })
 }
 
-# Internal helpers shared by gm_ndvi_month() and gm_ndvi_stack()
+# Internal helpers shared by gm_ndvi_month() and gm_ndvi_stack() (gm_month_mean() also by ndc_ndvi_month() and ndc_ndvi_stack())
 
 # Bounding box of the region `roi` in `epsg`, as the numbers of the WCS `subset` parameters
 gm_bbox <- function(roi, epsg) {

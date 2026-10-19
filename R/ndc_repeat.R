@@ -5,7 +5,8 @@
 #' without having to know which function it is for.
 #'
 #' The functions with `save_params` and `params_file` are [ndc_get()], [ndc_landuse_raster()], [ndc_nitrogen_raster()],
-#' [ndc_ndvi_stats()], [gm_ndvi_month()], [gm_ndvi_stack()], [adc_weather_station()],
+#' [ndc_ndvi_stats()], [ndc_ndvi_month()], [ndc_ndvi_stack()], [gm_ndvi_month()], [gm_ndvi_stack()], [adc_ndvi()],
+#' [adc_weather_station()],
 #' [adc_weather_date()], [adc_weather_period()], [adc_weather_long_period()], [adc_get()], [adc_get_all()] and
 #' [gm_get()]. A function with `save_params` writes the file when it has finished without an error (`ndc_get()`: when
 #' the search has succeeded). `params_file` supplies the arguments that you do not give yourself; what you give overrides the

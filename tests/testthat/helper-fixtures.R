@@ -225,3 +225,18 @@ rich_collection <- function(id = "lgn") {
                                  list(citation = "A report without DOI.")),
        `proj:epsg` = 28992, links = list())
 }
+
+# ---- NDVI ----
+
+# the daily NDVI items of the NatureDataCube
+ndvi_stac_items <- function() {
+  list(stac_item("gm-ndvi_20240203", date = "2024-02-03"),
+       stac_item("gm-ndvi_20240210", date = "2024-02-10"),
+       stac_item("gm-ndvi_20240305", date = "2024-03-05"))
+}
+
+# a feature of the NDVI service of the AgroDataCube
+ndvi_feature <- function(fieldid, date, avg = 0.5, sd = 0.1) {
+  list(type = "Feature", geometry = NULL,
+       properties = list(datum = date, ndvi_stddev = sd, ndvi_avg = avg, fieldid = fieldid, daynr = 1L))
+}
