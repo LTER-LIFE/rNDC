@@ -45,6 +45,17 @@ ndc_with_progress <- function(expr, report = NULL, interrupt = NULL) {
   expr
 }
 
+# Evaluate `expr` so that the reports of ndc_progress() in it count as the requests `offset + current` of `total`: for a question that
+# is asked in steps, to report one count (ndc_available() counts 24 collections in two steps). Without a report function it is
+# just `expr`.
+ndc_progress_shifted <- function(expr, offset, total) {
+  report <- getOption("rNDC.progress")
+  if (!is.function(report)) return(expr)
+  old <- options(rNDC.progress = function(message, current, steps) report(message, as.integer(offset + current), as.integer(total)))
+  on.exit(options(old))
+  expr
+}
+
 # Report that request `current` of `total` starts, and stop if the caller wants that (see ndc_with_progress()).
 ndc_progress <- function(message, current = NA_integer_, total = NA_integer_) {
   report <- getOption("rNDC.progress")

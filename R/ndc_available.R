@@ -43,12 +43,16 @@ ndc_available <- function(roi = NULL, trange = NULL, collections = NULL, externa
   if (!is.null(trange) && is.na(ndc_trange(trange))) stop("Invalid `trange`: provide one or two dates.", call. = FALSE)
 
   # the NatureDataCube: the items that match, per collection
-  found <- if (nrow(meta) > 0) stac_availability(meta$id, roi, token = token, trange = trange) else NULL
+  # (with ndc_with_progress(): every collection is counted once, in one of the two steps below, so they report one count)
+  total <- nrow(meta)
+  found <- if (nrow(meta) > 0) ndc_progress_shifted(stac_availability(meta$id, roi, token = token, trange = trange), 0L, total) else NULL
   seen <- if (is.null(found)) character(0) else unique(found$collection[!is.na(found$year)])  # items were returned
   # a search that did not return all the items counts only those of its first page: count them again
   if (!is.null(found) && !isTRUE(attr(found, "complete"))) {
     again <- unique(found$collection[!is.na(found$year)])
-    exact <- lapply(again, function(id) {
+    exact <- lapply(seq_along(again), function(k) {
+      id <- again[k]
+      ndc_progress(paste0("Counting the items of ", id), total - length(again) + k, total)
       n <- tryCatch(as.numeric(ndc_count(collection = id, roi = roi, trange = trange, limit = 1, token = token)),
                     error = function(e) NA_real_)
       data.frame(collection = id, year = NA_character_, n_items = n, stringsAsFactors = FALSE)

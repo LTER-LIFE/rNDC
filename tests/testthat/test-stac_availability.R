@@ -51,3 +51,16 @@ test_that("errors of the search are passed on, and a token is needed", {
   expect_error(stac_availability("lgn", roi, token = "t"))
   expect_error(stac_availability("lgn", roi, token = ""), "NDC_TOKEN")
 })
+
+test_that("the collections that are asked one by one are reported, to follow how far the question is", {
+  local_stac_api(pages = list(list(in_collection("lgn")), list(in_collection("lgn", "2025-01-01"))))
+  local_mocked_bindings(ndc_count = function(...) 0)
+  seen <- list()
+  table <- ndc_with_progress(
+    stac_availability(c("lgn", "ntot", "nox"), roi, token = "t"),
+    report = function(message, current, total) seen[[length(seen) + 1]] <<- list(message, current, total)
+  )
+  expect_equal(seen, list(list("Counting the items of ntot", 1L, 2L), list("Counting the items of nox", 2L, 2L)))
+  expect_equal(table$collection, "lgn")                              # (and without the reports nothing changes)
+  expect_equal(stac_availability(c("lgn", "ntot", "nox"), roi, token = "t")$collection, "lgn")
+})

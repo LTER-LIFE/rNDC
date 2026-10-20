@@ -41,7 +41,10 @@ stac_availability <- function(collections, roi = NULL, token = Sys.getenv("NDC_T
 
   matched <- items$numberMatched
   if (!is.null(matched) && matched > length(features)) {
-    for (missing in setdiff(collections, found$collection)) {
+    asked <- setdiff(collections, found$collection)
+    for (k in seq_along(asked)) {
+      missing <- asked[k]
+      ndc_progress(paste0("Counting the items of ", missing), k, length(asked))
       n <- tryCatch(as.numeric(ndc_count(collection = missing, roi = roi, trange = trange, limit = 1, token = token)), error = function(e) NA_real_)
       if (is.na(n) || n > 0) {
         found <- rbind(found, data.frame(collection = missing, year = NA_character_, n_items = n,

@@ -133,3 +133,20 @@ test_that("nothing is recounted when the search returned everything", {
   expect_true(attr(a, "complete"))
   expect_equal(ndc_available(nl_roi, external = FALSE, token = "t")$n_items, 2)
 })
+
+test_that("the counts of the collections are reported as one count of all of them, from both steps", {
+  # the first page has lgn only, with more items matched: ntot and nox are counted one by one, then lgn again (exactly)
+  local_stac_api(pages = list(list(in_collection("lgn")), list(in_collection("lgn", "2025-01-01"))),
+                 collections = list(stac_collection("lgn"), stac_collection("ntot"), stac_collection("nox")))
+  local_mocked_bindings(ndc_count = function(...) 1)
+  seen <- list()
+  ndc_with_progress(ndc_available(nl_roi, token = "t", external = FALSE),
+                    report = function(message, current, total) seen[[length(seen) + 1]] <<- list(message, current, total))
+  expect_equal(vapply(seen, function(x) x[[2]], 0L), 1:3)            # not 1, 2 and then 1 again
+  expect_equal(unique(vapply(seen, function(x) x[[3]], 0L)), 3L)     # of the three collections
+  expect_equal(seen[[3]][[1]], "Counting the items of lgn")
+
+  # without a report function nothing changes (and the option is put back)
+  expect_null(getOption("rNDC.progress"))
+  expect_equal(nrow(ndc_available(nl_roi, token = "t", external = FALSE)), 3)
+})
