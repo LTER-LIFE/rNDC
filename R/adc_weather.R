@@ -48,11 +48,13 @@ adc_weather_station <- function(roi,
   } else {
     poly_sfc <- ndc_roi(roi)
   }
-  poly_centroid <- st_centroid(poly_sfc)
-  
+  # The centroid is taken in the Dutch grid (planar), not on the sphere: on longitude/latitude data sf uses s2, which refuses a ring
+  # with two identical consecutive vertices ("Edge 1157 is degenerate"), as a WKT text written with few digits has when the
+  # vertices of a dense polygon are closer than its precision; and the centroid of lon/lat data is not correct anyway
+  centroid_m <- sf::st_centroid(sf::st_union(suppressWarnings(st_transform(poly_sfc, 28992))))
+
   # Distances
-  suppressWarnings({ stations_m <- st_transform(stations_sf, 28992)
-                     centroid_m <- st_transform(poly_centroid, 28992) })
+  suppressWarnings(stations_m <- st_transform(stations_sf, 28992))
   
   dists <- as.numeric(st_distance(centroid_m, stations_m)) # vector
   closest_idx <- which.min(dists)
