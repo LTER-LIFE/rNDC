@@ -85,9 +85,8 @@ The Jupyter notebooks in [`examples/`](examples) show each interface in use, sta
 ### ToDo
 
 - Migrate to `httr2`;
-- Generate a vignette or pkgdown site;
-- Harmonize functionality across the different data sources, and also towards using the returned data within Digital Twins platforms (e.g. *NaaVRE*);
-- Generally improve all functions.
+- Generate vignettes or pkgdown;
+- Continuously improve functionality.
 
 ## Citation
 
