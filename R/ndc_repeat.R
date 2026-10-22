@@ -34,6 +34,7 @@
 #' @param ... Arguments of the function of the file that override those of the file, such as `token` (which is never in
 #'   a file), `mode` or `out_dir`.
 #' @returns What the function of the file returns.
+#' @seealso [ndc_params_write()] to write the file of a call that has not been made.
 #' @examples
 #' \dontrun{
 #' ndc_landuse_raster(c(5.74, 52.05, 5.76, 52.07), year = 2024, save_params = "landuse.json")
@@ -53,4 +54,62 @@ ndc_repeat <- function(path, ...) {
     stop("'", path, "' is not a file with the parameters of a retrieval of rNDC (its `schema` is missing or unknown).", call. = FALSE)
   }
   do.call(get(name, envir = asNamespace("rNDC")), c(list(params_file = path), list(...)))
+}
+
+#' Write the parameters of a retrieval to a file, without running it
+#'
+#' The retrieval functions record their parameters in a JSON file when they have finished (`save_params`, see
+#' [ndc_repeat()]). `ndc_params_write()` writes the same file for a call that has not been made: give the name of the function
+#' and its arguments, and [ndc_repeat()] runs the file later, here or somewhere else. An argument that is not given has
+#' its default, which is written too (as the functions do), so that a later change of a default does not change what the file
+#' says. The token and the places where files go are not part of a file, and cannot be given.
+#'
+#' @param fun character. The name of the function: one of those that [ndc_repeat()] lists, such as `"ndc_landuse_raster"` or
+#'   `"adc_weather_period"`.
+#' @param args named list. The arguments of the call (an area as anything [ndc_roi()] accepts, or a WKT text in EPSG:4326; a period
+#'   as two dates; and so on). Arguments that the function does not record, such as `token`, are refused.
+#' @param path character. Where to write the file.
+#' @returns `path`, invisibly.
+#' @seealso [ndc_repeat()]
+#' @examples
+#' \dontrun{
+#' f <- tempfile(fileext = ".json")
+#' ndc_params_write("ndc_landuse_raster", list(roi = c(5.74, 52.05, 5.76, 52.07), year = 2024), f)
+#' ndc_repeat(f)                 # runs the call (add `token =` if NDC_TOKEN is not set)
+#' }
+#' @export
+ndc_params_write <- function(fun, args, path) {
+  spec <- params_specs[[fun]]
+  if (!is.character(fun) || length(fun) != 1 || is.null(spec)) {
+    stop("`fun` must be one of: ", paste(names(params_specs), collapse = ", "), ".", call. = FALSE)
+  }
+  if (length(args) > 0 && (is.null(names(args)) || any(!nzchar(names(args))))) {
+    stop("`args` must be a list with a name for every argument.", call. = FALSE)
+  }
+  unknown <- setdiff(names(args), names(spec$args))
+  if (length(unknown) > 0) {
+    stop(fun, "() does not record: ", paste(unknown, collapse = ", "), " (it records: ", paste(names(spec$args), collapse = ", "), ").",
+         call. = FALSE)
+  }
+
+  defaults <- formals(get(fun, envir = asNamespace("rNDC")))
+  fields <- list(schema = params_schema(fun),
+                 created = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+                 rNDC = as.character(utils::packageVersion("rNDC")))
+  if (spec$endpoint) fields$endpoint <- ndc_endpoint()
+  for (arg in names(spec$args)) {
+    value <- if (arg %in% names(args)) {
+      args[[arg]]
+    } else if (!identical(defaults[[arg]], quote(expr = ))) {
+      eval(defaults[[arg]], envir = asNamespace("rNDC"))
+    }
+    encoded <- params_encode(value, spec$args[[arg]], arg)
+    if (!is.null(encoded)) fields[[arg]] <- encoded
+  }
+
+  json <- jsonlite::toJSON(fields, auto_unbox = TRUE, pretty = TRUE, digits = NA)
+  tryCatch(writeLines(json, path, useBytes = TRUE),
+           error = function(e) stop("Could not write the parameters to '", path, "': ", conditionMessage(e), call. = FALSE),
+           warning = function(w) stop("Could not write the parameters to '", path, "': ", conditionMessage(w), call. = FALSE))
+  invisible(path)
 }

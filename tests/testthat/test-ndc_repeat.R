@@ -368,3 +368,101 @@ test_that("fields that a function does not take from a file are ignored with a w
   writeLines('{"schema": "rNDC-adc_weather_period/1", "station": 1, "page_size": 0}', f)
   expect_error(adc_weather_period(params_file = f, token = "t"), "`page_size`")
 })
+
+# ---- ndc_params_write(): the file of a call that has not been made ----
+
+# the fields of a file, without the time it was made
+fields_of <- function(f) {
+  x <- read_file(f)
+  x$created <- NULL
+  x
+}
+
+test_that("ndc_params_write() writes the file that the function records, and the defaults too", {
+  local_stac_api(list(stac_item("a", date = "2024-01-01")))
+  local_mocked_bindings(stac_download_one = function(href, ...) mock_download(href, ...))
+  ran <- tmp_json()
+  ndc_landuse_raster(square_4326(), year = 2024, token = "t", output_dir = withr::local_tempdir(), min_file_size = 0, limit = 50,
+                     save_params = ran)
+  written <- tmp_json()
+  expect_equal(ndc_params_write("ndc_landuse_raster", list(roi = square_4326(), year = 2024, limit = 50, min_file_size = 0), written),
+               written)
+  expect_equal(fields_of(written), fields_of(ran))
+  expect_equal(read_file(written)$schema, "rNDC-ndc_landuse_raster/1")
+  expect_no_secrets(written)
+
+  # ndc_nitrogen_raster: the year as text and the layers, as the function normalises them
+  ran_n <- tmp_json()
+  ndc_nitrogen_raster(square_4326(), year = "2024", layers = c("ntot", "nox"), token = "t", output_dir = withr::local_tempdir(),
+                      save_params = ran_n)
+  written_n <- tmp_json()
+  ndc_params_write("ndc_nitrogen_raster", list(roi = square_4326(), year = "2024", layers = c("ntot", "nox")), written_n)
+  expect_equal(fields_of(written_n), fields_of(ran_n))
+})
+
+test_that("ndc_params_write() matches the AHN, soil map and NDVI functions", {
+  local_stac_api(c(ahn_items(), list(soil_item(), stac_item("n1", date = "2024-02-03"))))
+  local_legend()
+  local_mocked_bindings(stac_download_one = mock_height_download())
+  same <- function(fun, run, args) {
+    ran <- tmp_json()
+    suppressMessages(run(ran))
+    written <- tmp_json()
+    ndc_params_write(fun, args, written)
+    expect_equal(fields_of(written), fields_of(ran), info = fun)
+  }
+  roi <- square_4326()
+  same("ndc_ahn_raster", function(f) ndc_ahn_raster(roi, layers = "dtm", year = 2019, token = "t", max_cells = Inf,
+                                                     output_dir = withr::local_tempdir(), scale = FALSE, save_params = f),
+       list(roi = roi, layers = "dtm", year = 2019, max_cells = Inf, scale = FALSE))
+  same("ndc_ahn_stats", function(f) ndc_ahn_stats(roi, layers = "dtm", token = "t", max_cells = Inf, save_params = f),
+       list(roi = roi, layers = "dtm", max_cells = Inf))
+  same("ndc_soil_raster", function(f) ndc_soil_raster(roi, token = "t", output_dir = withr::local_tempdir(), save_params = f),
+       list(roi = roi))
+  same("ndc_ndvi_stack", function(f) ndc_ndvi_stack(roi, c("2024-02-01", "2024-03-31"), token = "t", save_params = f),
+       list(roi = roi, trange = as.Date(c("2024-02-01", "2024-03-31"))))
+  same("ndc_ndvi_month", function(f) ndc_ndvi_month(roi, 2024, 2, token = "t", save_params = f),
+       list(roi = roi, year = 2024, month = 2))
+})
+
+test_that("ndc_params_write() matches the AgroDataCube functions, with a WKT text as the area", {
+  with_adc_stubs()
+  feature <- function(date) list(type = "Feature", geometry = list(type = "Point", coordinates = c(5, 52)),
+                                 properties = list(datum = date, mean_temperature = 10))
+  webmockr::stub_request("get", meteo_url("20240101", "20240102")) |>
+    webmockr::to_return(body = json_body(list(type = "FeatureCollection", features = list(feature("2024-01-01")))), headers = json_header)
+  ran <- tmp_json()
+  adc_weather_period(260, c(as.Date("2024-01-01"), as.Date("2024-01-02")), token = "t", save_params = ran)
+  written <- tmp_json()
+  ndc_params_write("adc_weather_period", list(station = "260", trange = as.Date(c("2024-01-01", "2024-01-02"))), written)
+  expect_equal(fields_of(written)[c("schema", "trange", "page_size")], fields_of(ran)[c("schema", "trange", "page_size")])
+  expect_equal(fields_of(written)$station, "260")
+
+  wkt <- "POLYGON((6.4 53.1, 6.6 53.1, 6.6 53.3, 6.4 53.3, 6.4 53.1))"
+  station <- tmp_json()
+  ndc_params_write("adc_weather_station", list(roi = wkt), station)
+  expect_equal(read_file(station)$roi$type, "Polygon")
+  expect_equal(read_file(station)$page_size, 10000)                     # (the default)
+  expect_null(read_file(station)$endpoint)                              # not a NatureDataCube function
+
+  fields <- tmp_json()
+  ndc_params_write("adc_get_all", list(option = "Fields", params = c(geometry = wkt, epsg = "4326", year = "2023", output_epsg = "4326")), fields)
+  expect_equal(read_file(fields)$params$year, "2023")
+  expect_equal(c(read_file(fields)$page_size, read_file(fields)$max_pages), c(1000, 100))
+})
+
+test_that("a file from ndc_params_write() is run by ndc_repeat(), and a bad call is refused", {
+  local_stac_api(list(stac_item("a", date = "2024-01-01")))
+  local_mocked_bindings(stac_download_one = function(href, ...) mock_download(href, ...))
+  f <- tmp_json()
+  ndc_params_write("ndc_landuse_raster", list(roi = square_4326(), year = 2024, min_file_size = 0), f)
+  res <- ndc_repeat(f, token = "t", output_dir = withr::local_tempdir())
+  expect_equal(names(res$stack), "LGN_2024")
+
+  expect_error(ndc_params_write("not_a_function", list(), f), "must be one of")
+  expect_error(ndc_params_write(c("ndc_get", "gm_get"), list(), f), "must be one of")
+  expect_error(ndc_params_write("ndc_landuse_raster", list(roi = square_4326(), token = "secret"), f), "does not record: token")
+  expect_error(ndc_params_write("ndc_landuse_raster", list(square_4326()), f), "a name for every argument")
+  expect_error(ndc_params_write("ndc_landuse_raster", list(roi = square_4326()), file.path(tempdir(), "no", "such", "dir", "x.json")),
+               "Could not write the parameters")
+})

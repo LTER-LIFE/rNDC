@@ -54,3 +54,6 @@ ndc_repeat("landuse.json")                      # again, here or on another mach
 ndc_repeat("landuse.json", year = 2023)         # the same area, another year
 }
 }
+\seealso{
+\code{\link[=ndc_params_write]{ndc_params_write()}} to write the file of a call that has not been made.
+}
